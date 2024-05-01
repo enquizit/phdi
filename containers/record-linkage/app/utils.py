@@ -44,15 +44,18 @@ def run_pyway(
         f"--database-username {settings['mpi_user']}",
         f"--database-password {settings['mpi_password']}",
     ]
+    
 
     full_command = ["pyway", pyway_command] + pyway_args
     full_command = " ".join(full_command)
-
+    
     # Attempt to run the pyway command.
     try:
+        
         pyway_response = subprocess.run(
             full_command, shell=True, check=True, capture_output=True
         )
+        
     except subprocess.CalledProcessError as error:
         error_message = error.output.decode("utf-8")
 

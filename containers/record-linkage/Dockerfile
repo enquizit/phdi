@@ -10,5 +10,11 @@ COPY ./description.md /code/description.md
 COPY ./migrations /code/migrations
 COPY ./assets /code/assets
 
+ADD odbcinst.ini /etc/odbcinst.ini
+RUN apt-get update
+RUN apt-get install -y tdsodbc unixodbc-dev
+RUN apt install unixodbc -y
+RUN apt-get clean -y
+
 EXPOSE 8080
-CMD uvicorn app.main:app --host 0.0.0.0 --port 8080 --log-config app/log_config.yml
+CMD uvicorn app.main:app --host 0.0.0.0 --port 8080 --log-config app/log_config.yml 

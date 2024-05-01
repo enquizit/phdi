@@ -1,30 +1,45 @@
-version: "3.9"
+version: "5.0"
 services:
   db:
-    image: "postgres:alpine"
+    image: "mcr.microsoft.com/mssql/server:2022-latest"
     ports:
-      - "5432:5432"
+      - "1433:1433"
+    command: /bin/bash /scripts/entrypoint.sh
+    volumes:
+      - dbdata:/var/opt/mssql
+      - ./db/scripts:/scripts
     environment:
-      - POSTGRES_USER=postgres
-      - PGUSER=postgres
-      - POSTGRES_PASSWORD=pw
-      - POSTGRES_DB=testdb
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${DB_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -U ${DB_USER} -P ${DB_PASSWORD} -Q 'SELECT 1'"]
       interval: 2s
       timeout: 5s
       retries: 20
+  flyway:
+    image: redgate/flyway
+    container_name: flyway
+    command: migrate -user=${DB_USER} -password=${DB_PASSWORD} -connectRetries=60
+    volumes:
+      - ./flyway/conf/:/flyway/conf
+      - ./flyway/sql/:/flyway/sql
+    depends_on:
+      db:
+        condition: service_healthy
   record-linkage:
     build: .
     ports:
       - "8080:8080"
     environment:
-      - MPI_DB_TYPE=postgres
-      - MPI_DBNAME=testdb
+      - MPI_DB_TYPE=mssql
+      - MPI_DBNAME=record_linkage
+      - MPI_SCHEMANAME=cdc
       - MPI_HOST=db
-      - MPI_PORT=5432
-      - MPI_USER=postgres
-      - MPI_PASSWORD=pw
+      - MPI_PORT=1433
+      - MPI_USER=${DB_USER}
+      - MPI_PASSWORD=${DB_PASSWORD}
     depends_on:
-      db:
-        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
+volumes:
+  dbdata:

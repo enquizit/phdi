@@ -27,6 +27,7 @@ def load_mpi_env_vars_os():
         "host": get_settings().get("mpi_host"),
         "port": get_settings().get("mpi_port"),
         "db_type": get_settings().get("mpi_db_type"),
+        "schema_name": get_settings().get("mpi_schemaname"),
     }
     return dbsettings
 

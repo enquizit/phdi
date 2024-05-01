@@ -8,6 +8,7 @@ from typing import Callable
 from typing import List
 from typing import Union
 
+import pandas as pd
 from pydantic import Field
 
 from app.linkage.mpi import BaseMPIConnectorClient
@@ -257,7 +258,7 @@ def feature_match_fuzzy_string(
     :return: A boolean indicating whether the features are a fuzzy match.
     """
     idx = col_to_idx[feature_col]
-
+    
     # Convert datetime obj to str using helper function
     if feature_col == "birthdate":
         record_i[idx] = datetime_to_str(record_i[idx])
@@ -277,6 +278,7 @@ def feature_match_fuzzy_string(
     if "threshold" in kwargs:
         threshold = kwargs["threshold"]
     score = compare_strings(record_i[idx], record_j[idx], similarity_measure)
+    
     return score >= threshold
 
 
@@ -443,7 +445,7 @@ def link_record_against_mpi(
             f"Done with get_block_data at: {datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
         )
 
-        data_block = _convert_given_name_to_first_name(raw_data_block)
+        data_block = aggregate_given_names_for_linkage(raw_data_block)
 
         # First row of returned block is column headers
         # Map column name to idx, not including patient/person IDs
@@ -641,6 +643,12 @@ def read_linkage_config(config_file: pathlib.Path) -> List[dict]:
     try:
         with open(config_file) as f:
             algo_config = json.load(f)
+            # Need to convert function keys back to column indices, since
+            # JSON serializes dict keys as strings
+            for rl_pass in algo_config.get("algorithm"):
+                rl_pass["funcs"] = {
+                    int(col): f for (col, f) in rl_pass["funcs"].items()
+                }
             return algo_config.get("algorithm", [])
     except FileNotFoundError:
         raise FileNotFoundError(f"No file exists at path {config_file}.")
@@ -717,10 +725,6 @@ def score_linkage_vs_truth(
         total_possible_matches - true_positives - false_positives - false_negatives
     )
 
-    print("True Positives:", true_positives)
-    print("False Positives:", false_positives)
-    print("False Negatives:", false_negatives)
-
     sensitivity = round(true_positives / (true_positives + false_negatives), 3)
     specificity = round(true_negatives / (true_negatives + false_positives), 3)
     ppv = round(true_positives / (true_positives + false_positives), 3)
@@ -740,7 +744,7 @@ def write_linkage_config(linkage_algo: List[dict], file_to_write: pathlib.Path) 
     and optionally `"cluster_ratio"` and `"kwargs"`) and whose values are
     as follows:
 
-    - `"funcs"` should map to a dictionary mapping column name to the
+    - `"funcs"` should map to a dictionary mapping column index to the
     name of a function in the DIBBS linkage module (such as
     `feature_match_fuzzy_string`)--note that these are the actual
     functions, not string names of the functions
@@ -751,6 +755,27 @@ def write_linkage_config(linkage_algo: List[dict], file_to_write: pathlib.Path) 
     - `"cluster_ratio"` should map to a float, if provided
     - `"kwargs"` should map to a dictionary of keyword arguments and their
     associated values, if provided
+
+    Here's an example of a simple single-pass linkage algorithm that blocks
+    on zip code, then matches on exact first name, exact last name, and
+    fuzzy date of birth (using, say, Levenshtein similarity with a score
+    threshold of 0.8) in dictionary descriptor form (for the sake of the
+    example, let's assume the data has the column order first, last, DOB):
+
+    [{
+        "funcs": {
+            0: feature_match_exact,
+            1: feature_match_exact,
+            2: feature_match_fuzzy_string,
+            3: feature_match_fuzzy_string,
+        },
+        "blocks": ["ZIP"],
+        "matching_rule": eval_perfect_match,
+        "kwargs": {
+            "similarity-measure": "Levenshtein",
+            "threshold": 0.8
+        }
+    }]
 
     :param linkage_algo: A list of dictionaries whose key-value pairs correspond
       to the rules above.
@@ -838,6 +863,8 @@ def _compare_records(
     """
     # Format is patient_id, person_id, alphabetical list of FHIR keys
     # Don't use the first two ID cols when linking
+
+    
     feature_comps = [
         _compare_records_field_helper(
             record[2:],
@@ -974,7 +1001,7 @@ def _flatten_patient_resource(resource: dict, col_to_idx: dict) -> List:
     flattened_record = [
         _flatten_patient_field_helper(resource, f) for f in col_to_idx.keys()
     ]
-    flattened_record = [resource["id"], None] + flattened_record
+    flattened_record = ["id", None] + flattened_record
     return flattened_record
 
 
@@ -1181,24 +1208,49 @@ def add_person_resource(
     return bundle
 
 
-def _convert_given_name_to_first_name(data: list[list]) -> list[list]:
+def aggregate_given_names_for_linkage(data: list[list]):
     """
-    In the list of query row results, convert the given_name column (which is a
-    list of given names) to a first_name column (which is a space-delimited string
-    of given names).
+    Aggregates the given names in the return block data into appropriate format for
+    record linkage, i.e., one row of data for each patient with all of the given names
+    in a space-delimited string, e.g., John Tiberius
 
     :param data: List of lists block data.
-    :return: List of lists with first_name column.
+    :return: List of lists with aggregated given names.
     """
-    result = []
-    if not data:
-        return result  # empty list, should return an empty list
+    # Convert LoL to pandas dataframe
+    raw_data = pd.DataFrame(data[1:], columns=data[0])
+    
+    # Aggregate given names
+    given_names = (
+        raw_data.sort_values(["name_id", "given_name_index"])
+        .groupby(["name_id"])["given_name"]
+        .apply(lambda x: " ".join(x))
+        .reset_index()
+    )
+    given_names.rename(columns={"given_name": "first_name"}, inplace=True)
 
-    if "given_name" not in data[0]:
-        return data  # given_name not in data, should return the original
+    # Merge aggregated given names into original data
+    df = raw_data.merge(given_names, on="name_id")
 
-    given_name_idx = data[0].index("given_name")
-    for idx, row in enumerate(data):
-        val = "first_name" if idx == 0 else " ".join(row[given_name_idx])
-        result.append(row[:given_name_idx] + [val] + row[given_name_idx + 1 :])
-    return result
+    # Return only necessary columns
+    # TODO: remove hard coding of necessary columns
+    necessary_columns = [
+        "patient_id",
+        "person_id",
+        "birthdate",
+        "sex",
+        "mrn",
+        "last_name",
+        "first_name",
+        "address",
+        "zip",
+        "city",
+        "state",
+    ]
+    df = df[necessary_columns]
+    df = df.drop_duplicates()
+
+    # Convert dataframe to list of lists for record linkage
+    lol = df.values.tolist()
+    lol.insert(0, necessary_columns)
+    return lol

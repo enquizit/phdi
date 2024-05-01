@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     mpi_dbname: str = Field(
         description="The name of the database used by the MPI",
     )
+    mpi_schemaname: str = Field(
+        description="The name of the schema used by the MPI",
+    )
     mpi_host: str = Field(
         description="The host name of the MPI database",
     )

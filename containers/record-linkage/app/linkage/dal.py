@@ -27,7 +27,7 @@ class DataAccessLayer(object):
 
     def __init__(self) -> None:
         self.engine = None
-        self.Meta = MetaData()
+        self.Meta = None
         self.PATIENT_TABLE = None
         self.PERSON_TABLE = None
         self.NAME_TABLE = None
@@ -42,6 +42,7 @@ class DataAccessLayer(object):
     def get_connection(
         self,
         engine_url: str,
+        schema_name: str,
         engine_echo: bool = False,
         pool_size: int = 5,
         max_overflow: int = 10,
@@ -60,11 +61,12 @@ class DataAccessLayer(object):
           “overflow”
         :return: None
         """
-
+        self.Meta = MetaData(schema=schema_name)
+        
         # create engine/connection
         self.engine = create_engine(
             engine_url,
-            client_encoding="utf8",
+            connect_args={'charset':'utf8'},
             echo=engine_echo,
             pool_size=pool_size,
             max_overflow=max_overflow,
@@ -281,6 +283,9 @@ class DataAccessLayer(object):
                                         "render_postprocess": str,
                                     },
                                 )
+                                
+                                print("statements =========>>>>>>>>>>>>>>> ", statements)
+                                
                                 statement = str(statement)
                                 statements.append(statement)
                                 logging.info(
@@ -324,6 +329,7 @@ class DataAccessLayer(object):
             logging.info(
                 f"Starting to execute statement to return results at: {datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
             )
+            print("select_statement ==================>>>> ", select_statement)
             results = session.execute(select_statement)
             logging.info(
                 f"Done executing statement to return results at: {datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
@@ -356,6 +362,8 @@ class DataAccessLayer(object):
         :return: SqlAlchemy ORM Table Object.
         """
 
+        self.initialize_schema()
+
         if table_name is not None and table_name != "":
             # TODO: I am sure there is an easier way to do this
             for table in self.TABLE_LIST:
@@ -373,6 +381,8 @@ class DataAccessLayer(object):
             table it belongs to.
         :return: SqlAlchemy ORM Table Object.
         """
+
+        self.initialize_schema()
 
         if column_name is not None and column_name != "":
             # TODO: I am sure there is an easier way to do this

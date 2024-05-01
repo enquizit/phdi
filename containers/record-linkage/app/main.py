@@ -20,7 +20,7 @@ from app.utils import read_json_from_assets
 from app.utils import run_migrations
 
 # Ensure MPI is configured as expected.
-run_migrations()
+#run_migrations()
 settings = get_settings()
 MPI_CLIENT = DIBBsMPIConnectorClient(
     pool_size=settings["connection_pool_size"],
@@ -145,7 +145,7 @@ async def link_record(
     # Check that DB type is appropriately set up as Postgres so
     # we can fail fast if it's not
     db_type = get_settings().get("mpi_db_type", "")
-    if db_type != "postgres":
+    if db_type != "mssql":
         response.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
         return {
             "found_match": False,

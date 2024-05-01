@@ -1,3 +1,4 @@
+import copy
 import datetime
 import logging
 import uuid
@@ -10,8 +11,6 @@ from sqlalchemy import and_
 from sqlalchemy import Select
 from sqlalchemy import select
 from sqlalchemy import text
-from sqlalchemy.dialects.postgresql import aggregate_order_by
-from sqlalchemy.dialects.postgresql import array_agg
 
 from app.linkage.core import BaseMPIConnectorClient
 from app.linkage.dal import DataAccessLayer
@@ -36,17 +35,20 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
         :param max_overflow: The number of connections to allow in connection pool.
         """
         dbsettings = load_mpi_env_vars_os()
+        
         dbuser = dbsettings.get("user")
         dbname = dbsettings.get("dbname")
         dbpwd = dbsettings.get("password")
         dbhost = dbsettings.get("host")
         dbport = dbsettings.get("port")
+        schema_name = dbsettings.get("schema_name")
         self.dal = DataAccessLayer()
         self.dal.get_connection(
-            engine_url=f"postgresql+psycopg2://{dbuser}:"
+            engine_url=f"mssql+pymssql://{dbuser}:"
             + f"{dbpwd}@{dbhost}:{dbport}/{dbname}",
+            schema_name=schema_name,
             pool_size=pool_size,
-            max_overflow=max_overflow,
+            max_overflow=max_overflow
         )
         self.dal.initialize_schema()
         self.column_to_fhirpaths = {
@@ -305,12 +307,12 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                 if self.dal.does_table_have_column(cte_query_table, "patient_id"):
                     cte_query = (
                         select(cte_query_table.c.patient_id.label("patient_id"))
-                        .distinct()
                         .where(text(" AND ".join(query_criteria)))
                         .cte(f"{table_key}_cte")
                     )
                 else:
-                    fk_info = next(iter(cte_query_table.foreign_keys))
+                    fk_query_table = copy.deepcopy(cte_query_table)
+                    fk_info = fk_query_table.foreign_keys.pop()
                     fk_column = fk_info.column
                     fk_table = fk_info.column.table
                     sub_query = (
@@ -319,9 +321,7 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                         .subquery(f"{cte_query_table.name}_cte_subq")
                     )
                     cte_query = (
-                        select(fk_table.c.patient_id)
-                        .distinct()
-                        .join(
+                        select(fk_table.c.patient_id).join(
                             sub_query,
                             text(
                                 f"{fk_table.name}.{fk_column.name} = "
@@ -435,13 +435,9 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                 self.dal.PATIENT_TABLE.c.sex,
                 id_sub_query.c.mrn,
                 self.dal.NAME_TABLE.c.last_name,
-                # Aggregate the given names into an array ordered by the name index
-                array_agg(
-                    aggregate_order_by(
-                        self.dal.GIVEN_NAME_TABLE.c.given_name,
-                        self.dal.GIVEN_NAME_TABLE.c.given_name_index.asc(),
-                    )
-                ).label("given_name"),
+                self.dal.GIVEN_NAME_TABLE.c.given_name,
+                self.dal.GIVEN_NAME_TABLE.c.given_name_index,
+                self.dal.GIVEN_NAME_TABLE.c.name_id,
                 # TODO: keeping this here for the time
                 # when we decide to add phone numbers into
                 # the blocking data
@@ -464,19 +460,6 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
             #
             # .outerjoin(phone_sub_query)
             .outerjoin(self.dal.ADDRESS_TABLE)
-            .group_by(
-                self.dal.PATIENT_TABLE.c.patient_id,
-                self.dal.PATIENT_TABLE.c.person_id,
-                "birthdate",
-                self.dal.PATIENT_TABLE.c.sex,
-                id_sub_query.c.mrn,
-                self.dal.NAME_TABLE.c.last_name,
-                self.dal.NAME_TABLE.c.name_id,
-                "address",
-                "zip",
-                self.dal.ADDRESS_TABLE.c.city,
-                self.dal.ADDRESS_TABLE.c.state,
-            )
         )
         return query
 
