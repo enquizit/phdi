@@ -641,6 +641,12 @@ def read_linkage_config(config_file: pathlib.Path) -> List[dict]:
     try:
         with open(config_file) as f:
             algo_config = json.load(f)
+            # Need to convert function keys back to column indices, since
+            # JSON serializes dict keys as strings
+            for rl_pass in algo_config.get("algorithm"):
+                rl_pass["funcs"] = {
+                    int(col): f for (col, f) in rl_pass["funcs"].items()
+                }
             return algo_config.get("algorithm", [])
     except FileNotFoundError:
         raise FileNotFoundError(f"No file exists at path {config_file}.")
@@ -740,7 +746,7 @@ def write_linkage_config(linkage_algo: List[dict], file_to_write: pathlib.Path) 
     and optionally `"cluster_ratio"` and `"kwargs"`) and whose values are
     as follows:
 
-    - `"funcs"` should map to a dictionary mapping column name to the
+    - `"funcs"` should map to a dictionary mapping column index to the
     name of a function in the DIBBS linkage module (such as
     `feature_match_fuzzy_string`)--note that these are the actual
     functions, not string names of the functions
@@ -751,6 +757,27 @@ def write_linkage_config(linkage_algo: List[dict], file_to_write: pathlib.Path) 
     - `"cluster_ratio"` should map to a float, if provided
     - `"kwargs"` should map to a dictionary of keyword arguments and their
     associated values, if provided
+
+    Here's an example of a simple single-pass linkage algorithm that blocks
+    on zip code, then matches on exact first name, exact last name, and
+    fuzzy date of birth (using, say, Levenshtein similarity with a score
+    threshold of 0.8) in dictionary descriptor form (for the sake of the
+    example, let's assume the data has the column order first, last, DOB):
+
+    [{
+        "funcs": {
+            0: feature_match_exact,
+            1: feature_match_exact,
+            2: feature_match_fuzzy_string,
+            3: feature_match_fuzzy_string,
+        },
+        "blocks": ["ZIP"],
+        "matching_rule": eval_perfect_match,
+        "kwargs": {
+            "similarity-measure": "Levenshtein",
+            "threshold": 0.8
+        }
+    }]
 
     :param linkage_algo: A list of dictionaries whose key-value pairs correspond
       to the rules above.
@@ -974,7 +1001,7 @@ def _flatten_patient_resource(resource: dict, col_to_idx: dict) -> List:
     flattened_record = [
         _flatten_patient_field_helper(resource, f) for f in col_to_idx.keys()
     ]
-    flattened_record = [resource["id"], None] + flattened_record
+    flattened_record = ["id", None] + flattened_record
     return flattened_record
 
 

@@ -455,50 +455,28 @@ def test_algo_read():
     assert dibbs_basic_algo == [
         {
             "funcs": {
-                "first_name": "feature_match_fuzzy_string",
-                "last_name": "feature_match_exact",
+                1: "feature_match_fuzzy_string",
+                3: "feature_match_fuzzy_string",
+                4: "feature_match_fuzzy_string",
             },
             "blocks": [
-                {"value": "birthdate"},
                 {"value": "mrn", "transformation": "last4"},
-                {"value": "sex"},
+                {"value": "address", "transformation": "first4"},
             ],
             "matching_rule": "eval_perfect_match",
             "cluster_ratio": 0.9,
-            "kwargs": {
-                "thresholds": {
-                    "first_name": 0.9,
-                    "last_name": 0.9,
-                    "birthdate": 0.95,
-                    "address": 0.9,
-                    "city": 0.92,
-                    "zip": 0.95,
-                }
-            },
         },
         {
             "funcs": {
-                "address": "feature_match_fuzzy_string",
-                "birthdate": "feature_match_exact",
+                0: "feature_match_fuzzy_string",
+                2: "feature_match_fuzzy_string",
             },
             "blocks": [
-                {"value": "zip"},
                 {"value": "first_name", "transformation": "first4"},
                 {"value": "last_name", "transformation": "first4"},
-                {"value": "sex"},
             ],
             "matching_rule": "eval_perfect_match",
             "cluster_ratio": 0.9,
-            "kwargs": {
-                "thresholds": {
-                    "first_name": 0.9,
-                    "last_name": 0.9,
-                    "birthdate": 0.95,
-                    "address": 0.9,
-                    "city": 0.92,
-                    "zip": 0.95,
-                }
-            },
         },
     ]
 
@@ -511,75 +489,37 @@ def test_algo_read():
     assert dibbs_enhanced_algo == [
         {
             "funcs": {
-                "first_name": "feature_match_log_odds_fuzzy_compare",
-                "last_name": "feature_match_log_odds_fuzzy_compare",
+                1: "feature_match_log_odds_fuzzy_compare",
+                3: "feature_match_log_odds_fuzzy_compare",
+                4: "feature_match_log_odds_fuzzy_compare",
             },
             "blocks": [
-                {"value": "birthdate"},
                 {"value": "mrn", "transformation": "last4"},
-                {"value": "sex"},
+                {"value": "address", "transformation": "first4"},
             ],
             "matching_rule": "eval_log_odds_cutoff",
             "cluster_ratio": 0.9,
             "kwargs": {
                 "similarity_measure": "JaroWinkler",
-                "thresholds": {
-                    "first_name": 0.9,
-                    "last_name": 0.9,
-                    "birthdate": 0.95,
-                    "address": 0.9,
-                    "city": 0.92,
-                    "zip": 0.95,
-                },
-                "true_match_threshold": 12.2,
-                "log_odds": {
-                    "address": 8.438284928858774,
-                    "birthdate": 10.126641103800338,
-                    "city": 2.438553006137189,
-                    "first_name": 6.849475906891162,
-                    "last_name": 6.350720397426025,
-                    "mrn": 0.3051262572525359,
-                    "sex": 0.7510419059643679,
-                    "state": 0.022376768992488694,
-                    "zip": 4.975031471124867,
-                },
+                "threshold": 0.7,
+                "true_match_threshold": 16.5,
             },
         },
         {
             "funcs": {
-                "address": "feature_match_log_odds_fuzzy_compare",
-                "birthdate": "feature_match_log_odds_fuzzy_compare",
+                0: "feature_match_log_odds_fuzzy_compare",
+                2: "feature_match_log_odds_fuzzy_compare",
             },
             "blocks": [
-                {"value": "zip"},
                 {"value": "first_name", "transformation": "first4"},
                 {"value": "last_name", "transformation": "first4"},
-                {"value": "sex"},
             ],
             "matching_rule": "eval_log_odds_cutoff",
             "cluster_ratio": 0.9,
             "kwargs": {
                 "similarity_measure": "JaroWinkler",
-                "thresholds": {
-                    "first_name": 0.9,
-                    "last_name": 0.9,
-                    "birthdate": 0.95,
-                    "address": 0.9,
-                    "city": 0.92,
-                    "zip": 0.95,
-                },
-                "true_match_threshold": 17.0,
-                "log_odds": {
-                    "address": 8.438284928858774,
-                    "birthdate": 10.126641103800338,
-                    "city": 2.438553006137189,
-                    "first_name": 6.849475906891162,
-                    "last_name": 6.350720397426025,
-                    "mrn": 0.3051262572525359,
-                    "sex": 0.7510419059643679,
-                    "state": 0.022376768992488694,
-                    "zip": 4.975031471124867,
-                },
+                "threshold": 0.7,
+                "true_match_threshold": 7.0,
             },
         },
     ]
@@ -601,17 +541,17 @@ def test_algo_write():
     sample_algo = [
         {
             "funcs": {
-                "first_name": feature_match_fuzzy_string,
-                "last_name": feature_match_exact,
+                8: feature_match_fuzzy_string,
+                12: feature_match_exact,
             },
             "blocks": ["MRN4", "ADDRESS4"],
             "matching_rule": eval_perfect_match,
         },
         {
             "funcs": {
-                "last_name": feature_match_four_char,
-                "sex": feature_match_log_odds_exact,
-                "address": feature_match_log_odds_fuzzy_compare,
+                10: feature_match_four_char,
+                16: feature_match_log_odds_exact,
+                22: feature_match_log_odds_fuzzy_compare,
             },
             "blocks": ["ZIP", "BIRTH_YEAR"],
             "matching_rule": eval_log_odds_cutoff,
@@ -628,17 +568,17 @@ def test_algo_write():
     assert loaded_algo == [
         {
             "funcs": {
-                "first_name": "feature_match_fuzzy_string",
-                "last_name": "feature_match_exact",
+                8: "feature_match_fuzzy_string",
+                12: "feature_match_exact",
             },
             "blocks": ["MRN4", "ADDRESS4"],
             "matching_rule": "eval_perfect_match",
         },
         {
             "funcs": {
-                "last_name": "feature_match_four_char",
-                "sex": "feature_match_log_odds_exact",
-                "address": "feature_match_log_odds_fuzzy_compare",
+                10: "feature_match_four_char",
+                16: "feature_match_log_odds_exact",
+                22: "feature_match_log_odds_fuzzy_compare",
             },
             "blocks": ["ZIP", "BIRTH_YEAR"],
             "matching_rule": "eval_log_odds_cutoff",
@@ -670,8 +610,8 @@ def test_link_record_against_mpi_none_record():
     ][:2]
 
     # Test various null data values in incoming record
-    patients[1]["gender"] = None
-    patients[1]["zip"] = None
+    patients[1]["name"][0]["given"] = None
+    patients[1]["birthDate"] = None
     matches = []
     mapped_patients = {}
     for patient in patients:
@@ -726,14 +666,15 @@ def test_link_record_against_mpi():
     # First patient inserted into empty MPI, no match
     # Second patient blocks with first patient in first pass, then fuzzy matches name
     # Third patient is entirely new individual, no match
-    # Fourth patient fails blocking with first pass then fails on second
+    # Fourth patient fails blocking with first pass but catches on second, fuzzy
+    # matches
     # Fifth patient: in first pass MRN blocks with one cluster but fails name,
     # in second pass name blocks with different cluster but fails address, no match
     # Sixth patient: in first pass, MRN blocks with one cluster and name matches in it,
     # in second pass name blocks on different cluster and address matches it,
     # finds greatest strength match and correctly assigns to larger cluster
-    assert matches == [False, True, False, False, False, False]
-    assert sorted(list(mapped_patients.values())) == [1, 1, 1, 1, 2]
+    assert matches == [False, True, False, True, False, True]
+    assert sorted(list(mapped_patients.values())) == [1, 1, 4]
 
     # Re-open connection to check for all insertions
     patient_records = MPI.dal.select_results(select(MPI.dal.PATIENT_TABLE))
@@ -820,8 +761,8 @@ def test_link_record_against_mpi_enhanced_algo():
     # Sixth patient: in first pass, MRN blocks with one cluster and name matches in it,
     # in second pass name blocks on different cluster and address matches it,
     #  finds greatest strength match and correctly assigns to larger cluster
-    assert matches == [False, True, False, True, False, False, True]
-    assert sorted(list(mapped_patients.values())) == [1, 1, 1, 4]
+    assert matches == [False, True, False, True, False, True, True]
+    assert sorted(list(mapped_patients.values())) == [1, 1, 5]
 
     # Re-open connection to check for all insertions
     patient_records = MPI.dal.select_results(select(MPI.dal.PATIENT_TABLE))

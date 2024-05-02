@@ -6,6 +6,10 @@ from pydantic import Field
 
 
 class Settings(BaseSettings):
+
+    class Config:
+        env_file = ".env"
+    
     mpi_db_type: str = Field(
         description="The type of database used by the MPI",
     )
