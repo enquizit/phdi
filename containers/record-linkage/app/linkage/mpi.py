@@ -116,7 +116,7 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
             },
         }
 
-    def get_block_data(self, block_criteria: Dict) -> List[list]:
+    def get_block_data(self, block_criteria: Dict, request_id: str) -> List[list]:
         """
         Returns a list of lists containing records from the MPI database that
         match on the incoming record's block criteria and values. If blocking
@@ -134,6 +134,7 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
         """
         logging.info("In get_block_data")
         if len(block_criteria) == 0:
+            logging.error(f"Request ID: {request_id} - `block_vals` cannot be empty.")
             raise ValueError("`block_vals` cannot be empty.")
 
         # Get the base query that will select all necessary
@@ -163,8 +164,7 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
             f"Starting _generate_block_query at:{datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
         )
         query_w_ctes = self._generate_block_query(
-            organized_block_criteria=organized_block_vals, query=query
-        )
+            organized_block_criteria=organized_block_vals, query=query, request_id=request_id)
         logging.info(
             f"Done with _generate_block_query at:{datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
         )
@@ -177,12 +177,15 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
         logging.info(
             f"Done with dal.select_results at:{datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
         )
-
+        
+        logging.info("Request ID: %s - Number of records retrieved by the match: %s ", request_id, len(blocked_data)) 
+        
         return blocked_data
 
     def insert_matched_patient(
         self,
         patient_resource: Dict,
+        request_id: str,
         person_id=None,
         external_person_id=None,
     ) -> str:
@@ -210,6 +213,9 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                     f"person_id was None; starting _insert_person at: {datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
                 )
                 person_id = self._insert_person()
+                
+                logging.info("Request ID: %s - The new person ID: %s ", request_id, person_id)
+                
                 logging.info(
                     f"person_id was None; done with _insert_person at: {datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
                 )
@@ -218,6 +224,8 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                 f"Starting _get_mpi_records at: {datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
             )
             mpi_records = self._get_mpi_records(patient_resource)
+            
+            logging.info("Request ID: %s - A new patient record is inserted:  %s ", request_id, mpi_records)
             logging.info(
                 f"Done with _get_mpi_records at:{datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
             )
@@ -242,11 +250,25 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                       done with _insert_external_person_id at:{datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"""  # noqa
                 )
         except Exception as error:  # pragma: no cover
+            logging.error(f"Request ID: error: {error}")
             raise ValueError(f"{error}")
 
         return person_id
+    
+    def insert_request(self) -> str:
+        """
+        Simple insert of a new request, which contains
+        a new id (pk)
 
-    def _generate_where_criteria(self, block_criteria: dict, table_name: str) -> list:
+        :return: The newly created request id.
+        """
+        request_record = {}
+        request_id = self.dal.bulk_insert_list(
+            self.dal.REQUEST_TABLE, [request_record], True
+        )
+        return request_id[0]
+    
+    def _generate_where_criteria(self, block_criteria: dict, table_name: str, request_id: str, criteria_list: list) -> list:
         """
         Generates a list of where criteria leveraging the blocking criteria,
         including transformations such as 'first 4' or 'last 4'.  This
@@ -256,26 +278,31 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
         :return: A list of where criteria used to append to the end of a query.
 
         """
+        criteria = ""
         where_criteria = []
         for key, value in block_criteria.items():
             criteria_value = value["value"]
             criteria_transform = value.get("transformation", None)
 
             if criteria_transform is None:
+                criteria_list.append(key + ": " + criteria_value)
                 where_criteria.append(f"{table_name}.{key} = '{criteria_value}'")
             else:
                 if criteria_transform == "first4":
+                    criteria_list.append(key + ": " + criteria_value + "(The first 4 characters should match)")
                     where_criteria.append(
                         f"LEFT({table_name}.{key},4) = '{criteria_value}'"
                     )
                 elif criteria_transform == "last4":
+                    criteria_list.append(key + ": " + criteria_value + "(The last 4 characters should match)")
                     where_criteria.append(
                         f"RIGHT({table_name}.{key},4) = '{criteria_value}'"
                     )
+                    
         return where_criteria
 
     def _generate_block_query(
-        self, organized_block_criteria: dict, query: Select
+        self, organized_block_criteria: dict, query: Select, request_id: str
     ) -> Select:
         """
         Generates a query for selecting a block of data from the MPI tables per the
@@ -290,7 +317,7 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
 
         """
         new_query = query
-
+        criteria_list = []
         for table_key, table_info in organized_block_criteria.items():
             query_criteria = None
             cte_query = None
@@ -298,9 +325,9 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
 
             cte_query_table = table_info["table"]
             query_criteria = self._generate_where_criteria(
-                table_info["criteria"], table_key
+                table_info["criteria"], table_key, request_id, criteria_list
             )
-
+         
             if query_criteria is not None and len(query_criteria) > 0:
                 if self.dal.does_table_have_column(cte_query_table, "patient_id"):
                     cte_query = (
@@ -334,7 +361,7 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                     cte_query,
                     and_(cte_query.c.patient_id == self.dal.PATIENT_TABLE.c.patient_id),
                 )
-
+        logging.info("Request ID: %s - The following criteria are used to retrieve the matching records from MPI database: %s ", request_id, criteria_list)
         return new_query
 
     def _organize_block_criteria(self, block_fields: dict) -> dict:
@@ -362,6 +389,7 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
             sub_dict = {}
             # TODO: we may find a better way to handle this, but for now
             # just convert the known fields into their proper column counterparts
+            
             if block_key == "address":
                 sub_dict["line_1"] = block_value
                 table_orm = self.dal.get_table_by_column("line_1")

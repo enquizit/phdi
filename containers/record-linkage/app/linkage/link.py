@@ -127,7 +127,6 @@ def extract_blocking_values_from_record(
       supported blocking fields above, and may also optionally contain a
       "transformation" key whose value is one of our supported transforms.
     """
-
     transform_funcs = {
         "first4": lambda x: x[:4] if len(x) >= 4 else x,
         "last4": lambda x: x[-4:] if len(x) >= 4 else x,
@@ -371,6 +370,7 @@ def generate_hash_str(linking_identifier: str, salt_str: str) -> str:
 def link_record_against_mpi(
     record: dict,
     algo_config: List[dict],
+    request_id: str,
     external_person_id: str = None,
     mpi_client: BaseMPIConnectorClient = None,
 ) -> tuple[bool, str]:
@@ -407,7 +407,7 @@ def link_record_against_mpi(
     logging.info(
         f"Starting _bind_func_names_to_invocations at: {datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
     )
-    algo_config = _bind_func_names_to_invocations(algo_config)
+    algo_config = _bind_func_names_to_invocations(algo_config, request_id)
     logging.info(
         f"Done with _bind_func_names_to_invocations at:{datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
     )
@@ -433,20 +433,21 @@ def link_record_against_mpi(
         # values come back blank, skip the pass because the only alt is comparing
         # to all found records
         if len(blocking_criteria) == 0:
-            logging.info("No blocking criteria extracted from incoming record.")
+            logging.error(f"Request ID: {request_id} - No blocking criteria extracted from incoming record.")
             continue
         logging.info(
             f"Starting get_block_data at: {datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
         )
-        raw_data_block = mpi_client.get_block_data(blocking_criteria)
+        raw_data_block = mpi_client.get_block_data(blocking_criteria, request_id)
+        
         logging.info(
             f"Done with get_block_data at: {datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
         )
-
+    
         data_block = _convert_given_name_to_first_name(raw_data_block)
-
         # First row of returned block is column headers
         # Map column name to idx, not including patient/person IDs
+        
         col_to_idx = {v: k for k, v in enumerate(data_block[0][2:])}
         if len(data_block[1:]) > 0:  # Check if data_block is empty
             data_block = data_block[1:]
@@ -508,6 +509,7 @@ def link_record_against_mpi(
                 logging.info(
                     f"Done with updating membership score at: {datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
                 )
+                
     person_id = None
     matched = False
 
@@ -516,7 +518,10 @@ def link_record_against_mpi(
         logging.info(
             f"Starting _find_strongest_link at: {datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
         )
-        person_id = _find_strongest_link(linkage_scores)
+        
+        person_id = _find_strongest_link(linkage_scores, request_id)
+        
+        logging.info("Request ID: %s - Match found! Person ID: %s  with score: %s", request_id, person_id, linkage_scores[person_id])
         matched = True
         logging.info(
             f"Done with _find_strongest_link at:{datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
@@ -525,7 +530,7 @@ def link_record_against_mpi(
         f"Starting mpi_client.insert_matched_patient at:{datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
     )
     person_id = mpi_client.insert_matched_patient(
-        record, person_id=person_id, external_person_id=external_person_id
+        record, request_id ,person_id=person_id, external_person_id=external_person_id
     )
     logging.info(
         f"Done with mpi_client.insert_matched_patient at:{datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
@@ -774,17 +779,22 @@ def write_linkage_config(linkage_algo: List[dict], file_to_write: pathlib.Path) 
         out.write(json.dumps(linkage_json))
 
 
-def _bind_func_names_to_invocations(algo_config: List[dict]):
+def _bind_func_names_to_invocations(algo_config: List[dict], request_id: str):
     """
     Helper method that re-maps the string names of functions to their
     callable invocations as defined within the `link.py` module.
     """
+    logging.info(f"Request ID: {request_id} - The following fields and functions will be used for matching:")
+    matchng_rule_func = ""
     for lp in algo_config:
         feature_funcs = lp["funcs"]
+        logging.info("Request ID: %s - %s ", request_id ,feature_funcs)
         for func in feature_funcs:
             if type(feature_funcs[func]) is str:  # noqa
                 feature_funcs[func] = globals()[feature_funcs[func]]
         if type(lp["matching_rule"]) is str:  # noqa
+            if not lp["matching_rule"] in matchng_rule_func:
+                matchng_rule_func += " " + lp["matching_rule"]
             lp["matching_rule"] = globals()[lp["matching_rule"]]
     return algo_config
 
@@ -954,7 +964,7 @@ def _condense_extract_address_from_resource(resource: dict, field: str):
     return list_of_usable_address_elements
 
 
-def _find_strongest_link(linkage_scores: dict) -> str:
+def _find_strongest_link(linkage_scores: dict, request_id: str) -> str:
     """
     Helper method that determines the highest belongingness level that an
     incoming record achieved against a set of clusers based on existing
@@ -974,7 +984,7 @@ def _flatten_patient_resource(resource: dict, col_to_idx: dict) -> List:
     flattened_record = [
         _flatten_patient_field_helper(resource, f) for f in col_to_idx.keys()
     ]
-    flattened_record = [resource["id"], None] + flattened_record
+    flattened_record = ["id", None] + flattened_record
     return flattened_record
 
 

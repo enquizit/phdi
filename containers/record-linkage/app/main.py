@@ -1,4 +1,6 @@
 import copy
+import datetime
+import logging
 from pathlib import Path
 from typing import Annotated
 from typing import Optional
@@ -17,11 +19,15 @@ from app.linkage.link import link_record_against_mpi
 from app.linkage.mpi import DIBBsMPIConnectorClient
 from app.utils import get_settings
 from app.utils import read_json_from_assets
-from app.utils import run_migrations
+
 
 # Ensure MPI is configured as expected.
-run_migrations()
+
 settings = get_settings()
+
+logger = logging.getLogger('root')
+logger.disabled = settings.get("mpi_logger_disabled")
+
 MPI_CLIENT = DIBBsMPIConnectorClient(
     pool_size=settings["connection_pool_size"],
     max_overflow=settings["connection_pool_max_overflow"],
@@ -137,7 +143,9 @@ async def link_record(
     check for matches with existing patient records If matches are found,
     returns the bundle with updated references to existing patients.
     """
-
+    
+    request_id = MPI_CLIENT.insert_request()
+    
     input = dict(input)
     input_bundle = input.get("bundle", {})
     external_id = input.get("external_person_id", None)
@@ -147,6 +155,7 @@ async def link_record(
     db_type = get_settings().get("mpi_db_type", "")
     if db_type != "postgres":
         response.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+        logging.error(f"Request ID: {request_id} - Unsupported database type '{db_type}' was supplied.")
         return {
             "found_match": False,
             "updated_bundle": input_bundle,
@@ -160,11 +169,14 @@ async def link_record(
     use_enhanced = input.get("use_enhanced", False)
     if use_enhanced:
         algo_config = DIBBS_ENHANCED
+        logging.info("Request ID: %s - The following new ‘link-record’ request was received and will be processed using the ‘DIBBS Enhanced Algorithm’:  %s ", request_id ,input)
     else:
         algo_config = input.get("algo_config", {}).get("algorithm", [])
         if algo_config == []:
             algo_config = DIBBS_BASIC
-
+            logging.info("Request ID: %s - The following new ‘link-record’ request was received and will be processed using the ‘DIBBS Basic Algorithm’:  %s ", request_id ,input)
+        else:
+            logging.info("Request ID: %s - The following new ‘link-record’ request was received and will be processed using the provided algorithm:  %s ", request_id ,input)
     # Now extract the patient record we want to link
     try:
         record_to_link = [
@@ -174,6 +186,7 @@ async def link_record(
         ][0]
     except IndexError:
         response.status_code = status.HTTP_400_BAD_REQUEST
+        logging.error(f"Request ID: {request_id} - The supplied bundle contains no Patient resource to link on.")
         return {
             "found_match": False,
             "updated_bundle": input_bundle,
@@ -189,6 +202,7 @@ async def link_record(
             algo_config=algo_config,
             external_person_id=external_id,
             mpi_client=MPI_CLIENT,
+            request_id=request_id,
         )
         updated_bundle = add_person_resource(
             new_person_id, record_to_link.get("id", ""), input_bundle
@@ -197,6 +211,7 @@ async def link_record(
 
     except ValueError as err:
         response.status_code = status.HTTP_400_BAD_REQUEST
+        logging.error(f"Request ID: {request_id} Could not connect to database: {err}")
         return {
             "found_match": False,
             "updated_bundle": input_bundle,

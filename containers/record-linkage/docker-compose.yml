@@ -25,6 +25,7 @@ services:
       - MPI_PORT=5432
       - MPI_USER=postgres
       - MPI_PASSWORD=pw
+      - MPI_LOGGER_DISABLED=False
     depends_on:
       db:
         condition: service_healthy

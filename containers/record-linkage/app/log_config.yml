@@ -7,6 +7,9 @@ formatters:
   access:
     # "()": uvicorn.logging.AccessFormatter
     format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+filters:
+  businessFilter:
+    (): app.logging_business_filter.BusinessFilter
 handlers:
   default:
     formatter: default
@@ -16,19 +19,37 @@ handlers:
     formatter: access
     class: logging.StreamHandler
     stream: ext://sys.stdout
+  short_info_file_handler:
+        class: logging.handlers.RotatingFileHandler
+        level: NOTSET
+        formatter: access
+        filename: /tmp/rlsinfo.log
+        maxBytes: 10485760 # 10MB
+        backupCount: 20
+        encoding: utf8
+        filters: [businessFilter]
+  info_file_handler:
+        class: logging.handlers.RotatingFileHandler
+        level: NOTSET
+        formatter: access
+        filename: /tmp/info.log
+        maxBytes: 10485760 # 10MB
+        backupCount: 20
+        encoding: utf8
+  db:
+        class: app.db_handler.DBHandler
+        level: INFO
+        formatter: default
 loggers:
   uvicorn.error:
     level: INFO
-    handlers:
-      - default
+    handlers: [default]
     propagate: no
   uvicorn.access:
     level: INFO
-    handlers:
-      - access
+    handlers: [access]
     propagate: no
 root:
-  level: DEBUG
-  handlers:
-    - default
+  level: NOTSET
+  handlers: [default, db, info_file_handler, short_info_file_handler]
   propagate: no

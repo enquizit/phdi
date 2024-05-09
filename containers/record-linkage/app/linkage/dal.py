@@ -37,6 +37,8 @@ class DataAccessLayer(object):
         self.ADDRESS_TABLE = None
         self.EXTERNAL_PERSON_TABLE = None
         self.EXTERNAL_SOURCE_TABLE = None
+        self.LOG_ITEM_TABLE = None
+        self.REQUEST_TABLE = None
         self.TABLE_LIST = []
 
     def get_connection(
@@ -95,7 +97,15 @@ class DataAccessLayer(object):
         self.EXTERNAL_SOURCE_TABLE = Table(
             "external_source", self.Meta, autoload_with=self.engine
         )
-
+        
+        self.LOG_ITEM_TABLE = Table(
+            "log_item", self.Meta, autoload_with=self.engine
+        )
+        
+        self.REQUEST_TABLE = Table(
+            "request", self.Meta, autoload_with=self.engine
+        )
+        
         # order of the list determines the order of
         # inserts due to FK constraints
         self.TABLE_LIST = []
@@ -108,6 +118,9 @@ class DataAccessLayer(object):
         self.TABLE_LIST.append(self.ID_TABLE)
         self.TABLE_LIST.append(self.PHONE_TABLE)
         self.TABLE_LIST.append(self.ADDRESS_TABLE)
+        self.TABLE_LIST.append(self.LOG_ITEM_TABLE)
+        self.TABLE_LIST.append(self.REQUEST_TABLE)
+        
 
     @contextmanager
     def transaction(self) -> None:

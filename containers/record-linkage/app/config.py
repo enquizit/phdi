@@ -6,9 +6,14 @@ from pydantic import Field
 
 
 class Settings(BaseSettings):
+    mpi_logger_disabled: bool = Field(
+        description="Switch on/off the logger of MPI",
+    )
+    
     mpi_db_type: str = Field(
         description="The type of database used by the MPI",
     )
+    
     mpi_dbname: str = Field(
         description="The name of the database used by the MPI",
     )
@@ -43,4 +48,6 @@ def get_settings() -> dict:
     :return: A dictionary with keys specified by the Settings. The value of each key is
     read from the corresponding environment variable.
     """
+    
+
     return Settings().dict()
