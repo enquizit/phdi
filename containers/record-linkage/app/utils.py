@@ -34,7 +34,7 @@ def run_pyway(
     
 
 
-    conn = psycopg2.connect("dbname=testdb user=postgres password=root")
+    # conn = psycopg2.connect("dbname=testdb user=postgres password=root")
     
     print("Connected")
     logger = logging.getLogger(__name__)
@@ -62,7 +62,6 @@ def run_pyway(
         )
     except subprocess.CalledProcessError as error:
         error_message = error.output.decode("utf-8")
-        print("yessssssssssssssssssssssssssssssssssssssssssssss")
         # Pyway validate returns an error if no migrations have been applied yet.
         # This is expected behavior, so we can ignore this error and continue onto
         # the migrations with pyway migrate. We'll encounter this error when we
