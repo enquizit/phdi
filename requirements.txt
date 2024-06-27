@@ -1,0 +1,14 @@
+pytest
+httpx
+pathlib
+pyway==0.3.24
+psycopg2-binary==2.9.9
+tabulate
+fhirpathpy
+pandas>2.0.0
+sqlalchemy
+rapidfuzz
+pyarrow>=14.0.1
+pydantic
+fastapi
+pydantic-settings
