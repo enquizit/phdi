@@ -13,7 +13,7 @@ MOCK_SETTINGS = {
     "mpi_port": "5432",
     "mpi_dbname": "testdb",
     "mpi_user": "postgres",
-    "mpi_password": "pw",
+    "mpi_password": "postgres",
 }
 
 
@@ -30,7 +30,7 @@ def make_pyway_command(
 
     pyway_command = " ".join(
         [
-            "pyway",
+            ".venv/bin/pyway",
             pyway_command,
             f"--database-migration-dir {migrations_dir}",
             f"--database-type {MOCK_SETTINGS['mpi_db_type']}",

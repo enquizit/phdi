@@ -15,9 +15,7 @@ from sqlalchemy import text
 
 patient_resource = json.load(
     open(
-        pathlib.Path(__file__).parent.parent.parent.parent
-        / "containers"
-        / "record-linkage"
+        pathlib.Path(__file__).parent.parent
         / "assets"
         / "general"
         / "patient_resource_w_extensions.json"
@@ -29,7 +27,7 @@ def _init_db() -> DataAccessLayer:
     os.environ = {
         "mpi_dbname": "testdb",
         "mpi_user": "postgres",
-        "mpi_password": "pw",
+        "mpi_password": "postgres",
         "mpi_host": "localhost",
         "mpi_port": "5432",
         "mpi_db_type": "postgres",
@@ -37,15 +35,13 @@ def _init_db() -> DataAccessLayer:
 
     dal = DataAccessLayer()
     dal.get_connection(
-        engine_url="postgresql+psycopg2://postgres:pw@localhost:5432/testdb"
+        engine_url="postgresql+psycopg2://postgres:postgres@localhost:5432/testdb"
     )
     _clean_up(dal)
 
     # load ddl
     schema_ddl = open(
-        pathlib.Path(__file__).parent.parent.parent.parent
-        / "containers"
-        / "record-linkage"
+        pathlib.Path(__file__).parent.parent
         / "migrations"
         / "V01_01__flat_schema.sql"
     ).read()

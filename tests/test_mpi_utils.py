@@ -8,7 +8,7 @@ def test_get_settings_and_env_vars():
     os.environ = {
         "mpi_dbname": "testdb",
         "mpi_user": "postgres",
-        "mpi_password": "pw",
+        "mpi_password": "postgres",
         "mpi_host": "localhost",
         "mpi_port": "5432",
         "mpi_db_type": "postgres",
@@ -18,7 +18,7 @@ def test_get_settings_and_env_vars():
         "mpi_dbname": "testdb",
         "mpi_host": "localhost",
         "mpi_user": "postgres",
-        "mpi_password": "pw",
+        "mpi_password": "postgres",
         "mpi_port": "5432",
     }
     db_settings = get_settings()
@@ -30,7 +30,7 @@ def test_get_settings_and_env_vars():
         "dbname": "testdb",
         "host": "localhost",
         "user": "postgres",
-        "password": "pw",
+        "password": "postgres",
         "port": "5432",
     }
 

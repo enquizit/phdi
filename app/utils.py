@@ -45,7 +45,7 @@ def run_pyway(
         f"--database-password {settings['mpi_password']}",
     ]
 
-    full_command = ["pyway", pyway_command] + pyway_args
+    full_command = [".venv/bin/pyway", pyway_command] + pyway_args
     full_command = " ".join(full_command)
 
     # Attempt to run the pyway command.
@@ -115,7 +115,7 @@ def set_mpi_env_vars():
     os.environ["mpi_db_type"] = "postgres"
     os.environ["mpi_dbname"] = "testdb"
     os.environ["mpi_user"] = "postgres"
-    os.environ["mpi_password"] = "pw"
+    os.environ["mpi_password"] = "postgres"
     os.environ["mpi_host"] = "localhost"
     os.environ["mpi_port"] = "5432"
     get_settings.cache_clear()

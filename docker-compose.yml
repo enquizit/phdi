@@ -21,7 +21,7 @@ services:
     environment:
       - MPI_DB_TYPE=postgres
       - MPI_DBNAME=testdb
-      - MPI_HOST=db
+      - MPI_HOST=localhost
       - MPI_PORT=5432
       - MPI_USER=postgres
       - MPI_PASSWORD=postgres

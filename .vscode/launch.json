@@ -14,7 +14,7 @@
         "app.main:app",
         "--reload",
         "--port",
-        "8080",
+        "8081",
         "--log-config",
         "app/log_config.yml"
       ]
