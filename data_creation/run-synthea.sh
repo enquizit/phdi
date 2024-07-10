@@ -15,6 +15,13 @@
 
 set -e
 
+# Check if synthea jar exists
+if [ ! -f "./assets/synthea-with-dependencies.jar" ]; then
+  echo "Downloading Synthea jar file..."
+  curl -Lo ./assets/synthea-with-dependencies.jar 'https://github.com/synthetichealth/synthea/releases/download/master-branch-latest/synthea-with-dependencies.jar'
+  echo "Download complete"
+fi
+
 SIZE=${1:-"4"} # 1,596,273 population
 OUTPUT_DIR=${2:-"./data/"}
 STATE=${3:-"New York"}
