@@ -974,7 +974,7 @@ def _flatten_patient_resource(resource: dict, col_to_idx: dict) -> List:
     flattened_record = [
         _flatten_patient_field_helper(resource, f) for f in col_to_idx.keys()
     ]
-    flattened_record = [resource["id"], None] + flattened_record
+    flattened_record = ["id", None] + flattened_record
     return flattened_record
 
 
