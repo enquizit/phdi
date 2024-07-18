@@ -1,0 +1,41 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:16.3
+    environment:
+      POSTGRES_DB: linkage
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - 5432:5432  
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+      - flyway
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/linkage
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: admin
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"  # Enable remote debugging
+      
+    volumes:
+      - C:\Users\ShehamIzat\Desktop\Recod-Linkage\docker-logs\logs:/var/log/app  # map the docker log files to local machine path 
+
+  flyway:
+    image: flyway/flyway:9.8.1
+    command: -url=jdbc:postgresql://postgres:5432/linkage -user=admin -password=admin -locations=filesystem:/flyway/sql -baselineOnMigrate=true migrate
+    depends_on:
+      - postgres
+    volumes:
+      - ./sql:/flyway/sql  # Local sql directory mapped to /flyway/sql in the container
+
+volumes:
+  postgres_data:
+
