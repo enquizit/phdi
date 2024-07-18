@@ -91,9 +91,21 @@ def eval_log_odds_cutoff(feature_comparisons: List, **kwargs) -> bool:
     :return: Whether the feature comparisons score well enough to be
       considered a match.
     """
+    # if "true_match_threshold" not in kwargs:
+    #     raise KeyError("Cutoff threshold for true matches must be passed.")
+    # return sum(feature_comparisons) >= kwargs["true_match_threshold"]
     if "true_match_threshold" not in kwargs:
         raise KeyError("Cutoff threshold for true matches must be passed.")
-    return sum(feature_comparisons) >= kwargs["true_match_threshold"]
+    if "human_review_threshold" not in kwargs:
+        raise KeyError("Cutoff threshold for human review must be passed.")
+
+    score = sum(feature_comparisons)
+    is_match = score >= kwargs["true_match_threshold"]
+    needs_human_review = (
+        kwargs["human_review_threshold"] <= score < kwargs["true_match_threshold"]
+    )
+
+    return is_match, needs_human_review
 
 
 def extract_blocking_values_from_record(
@@ -329,7 +341,7 @@ def feature_match_log_odds_fuzzy_compare(
     :param record_j: The second record in the candidate pair.
     :param feature_col: The name of the column being evaluated (e.g. "city").
     :param col_to_idx: A dictionary mapping column names to the numeric index
-      in which they occur in order in the data.
+    in which they occur in order in the data.
     :return: A float of the score the feature comparison earned.
     """
     if "log_odds" not in kwargs:
@@ -346,8 +358,10 @@ def feature_match_log_odds_fuzzy_compare(
         record_j[idx] = datetime_to_str(record_j[idx])
 
     score = compare_strings(record_i[idx], record_j[idx], "JaroWinkler")
+
     if score < threshold:
         score = 0.0
+
     return score * col_odds
 
 
@@ -415,6 +429,10 @@ def link_record_against_mpi(
     # Membership ratios need to persist across linkage passes so that we can
     # find the highest scoring match across all trials
     linkage_scores = {}
+    human_review_needed = False # default
+    potential_match_person_id = None #default
+    message = ""
+    
     for linkage_pass in algo_config:
         blocking_fields = linkage_pass["blocks"]
 
@@ -474,7 +492,7 @@ def link_record_against_mpi(
                     logging.info(
                         f"Starting _compare_records at:{datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
                     )
-                    is_match = _compare_records(
+                    is_match, needs_human_review = _compare_records(
                         flattened_record,
                         linked_patient,
                         linkage_pass["funcs"],
@@ -488,6 +506,12 @@ def link_record_against_mpi(
 
                     if is_match:
                         num_matched_in_cluster += 1.0
+
+                    
+                    if needs_human_review:
+                        human_review_needed = True
+                        potential_match_person_id = person
+                        message = f"System Identified Potential Match with Person {potential_match_person_id}"
 
                 # Update membership score for this person cluster so that we can
                 # track best possible link across multiple passes
@@ -508,10 +532,12 @@ def link_record_against_mpi(
                 logging.info(
                     f"Done with updating membership score at: {datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
                 )
+                
     person_id = None
     matched = False
 
     # If we found any matches, find the strongest one
+
     if len(linkage_scores) != 0:
         logging.info(
             f"Starting _find_strongest_link at: {datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
@@ -531,7 +557,7 @@ def link_record_against_mpi(
         f"Done with mpi_client.insert_matched_patient at:{datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
     )
 
-    return (matched, person_id)
+    return (matched, person_id, message, human_review_needed)
 
 
 def load_json_probs(path: pathlib.Path):
@@ -849,8 +875,8 @@ def _compare_records(
         )
         for feature_col in feature_funcs
     ]
-    is_match = matching_rule(feature_comps, **kwargs)
-    return is_match
+    is_match, needs_human_review = matching_rule(feature_comps, **kwargs)
+    return is_match, needs_human_review
 
 
 def _compare_records_field_helper(
@@ -974,7 +1000,7 @@ def _flatten_patient_resource(resource: dict, col_to_idx: dict) -> List:
     flattened_record = [
         _flatten_patient_field_helper(resource, f) for f in col_to_idx.keys()
     ]
-    flattened_record = [resource["id"], None] + flattened_record
+    flattened_record = ["id", None] + flattened_record
     return flattened_record
 
 

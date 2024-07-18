@@ -66,6 +66,7 @@ class LinkRecordInput(BaseModel):
         " for a unique patient/person that is linked to patient(s)",
         default=None,
     )
+    
 
 
 class LinkRecordResponse(BaseModel):
@@ -87,6 +88,10 @@ class LinkRecordResponse(BaseModel):
         description="An optional message in the case that the linkage endpoint did "
         "not run successfully containing a description of the error that happened.",
         default="",
+    )
+    human_review_flag: Optional[str] = Field(
+        description="A message indicating a potential match that needs human review.",
+        default=""
     )
 
 
@@ -184,7 +189,7 @@ async def link_record(
     try:
         # Make a copy of record_to_link so we don't modify the original
         record = copy.deepcopy(record_to_link)
-        (found_match, new_person_id) = link_record_against_mpi(
+        (found_match, new_person_id, message, human_review_needed) = link_record_against_mpi(
             record=record,
             algo_config=algo_config,
             external_person_id=external_id,
@@ -193,7 +198,8 @@ async def link_record(
         updated_bundle = add_person_resource(
             new_person_id, record_to_link.get("id", ""), input_bundle
         )
-        return {"found_match": found_match, "updated_bundle": updated_bundle}
+
+        return {"found_match": found_match, "updated_bundle": updated_bundle, "message":message, "human_review_flag": human_review_needed}
 
     except ValueError as err:
         response.status_code = status.HTTP_400_BAD_REQUEST
