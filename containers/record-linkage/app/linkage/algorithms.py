@@ -8,7 +8,13 @@ LOG_ODDS_SCORES = {
     "city": 2.438553006137189,
     "first_name": 6.849475906891162,
     "last_name": 6.350720397426025,
+    "second_first_name" : 0.5,
+    "middle" :0.7,
     "mrn": 0.3051262572525359,
+    "ssn": 0.5,
+    "id_assigning_authority": 0.5,
+    "id_type": 0.5,
+    "id_value": 0.5,
     "sex": 0.7510419059643679,
     "state": 0.022376768992488694,
     "zip": 4.975031471124867,
@@ -16,10 +22,16 @@ LOG_ODDS_SCORES = {
 FUZZY_THRESHOLDS = {
     "first_name": 0.9,
     "last_name": 0.9,
+    "second_first_name" : 0.5,
+    "middle" :0.7,
     "birthdate": 0.95,
     "address": 0.9,
     "city": 0.92,
     "zip": 0.95,
+    "ssn": 0.8,
+    "id_assigning_authority": 0.5,
+    "id_type": 0.5,
+    "id_value": 0.5,
 }
 
 
@@ -62,9 +74,9 @@ DIBBS_ENHANCED = [
             "last_name": "feature_match_log_odds_fuzzy_compare",
         },
         "blocks": [
-            {"value": "birthdate"},
+            {"value": "second_first_name"},
             {"value": "mrn", "transformation": "last4"},
-            {"value": "sex"},
+            {"value": "middle"},
         ],
         "matching_rule": "eval_log_odds_cutoff",
         "cluster_ratio": 0.9,
@@ -84,8 +96,8 @@ DIBBS_ENHANCED = [
         "blocks": [
             {"value": "zip"},
             {"value": "first_name", "transformation": "first4"},
-            {"value": "last_name", "transformation": "first4"},
-            {"value": "sex"},
+            {"value": "id_assigning_authority", "transformation": "first4"},
+            {"value": "suffix"},
         ],
         "matching_rule": "eval_log_odds_cutoff",
         "cluster_ratio": 0.9,

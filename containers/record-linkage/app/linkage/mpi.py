@@ -72,6 +72,8 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                 "fields": {
                     "last_name": "family",
                     "given_name": "given",
+                    "middle": "middle",
+                    "suffix": "suffix",
                     "type": "use",
                 },
             },
@@ -112,6 +114,10 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                     "type_code": "type.coding[0].code",
                     "type_display": "type.coding[0].display",
                     "type_system": "type.coding[0].system",
+                    "id_type":"id_type",
+                    "id_value":"id_value",
+                    "id_assigning_authority":"id_assigning_authority",
+                    "ssn":"ssn",
                 },
             },
         }
@@ -258,9 +264,9 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
         """
         where_criteria = []
         for key, value in block_criteria.items():
+            logging.info(f"_generate_where_criteria value: {value} and key: {key}")
             criteria_value = value["value"]
             criteria_transform = value.get("transformation", None)
-
             if criteria_transform is None:
                 where_criteria.append(f"{table_name}.{key} = '{criteria_value}'")
             else:
@@ -357,6 +363,7 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
         """
         # Accepted blocking fields include: first_name, last_name,
         # birthdate, address line 1, city, state, zip, mrn, and sex.
+        # Ne fields: suffix, id_type, id_type ,id_assigning_authority, middle name, second middle name
         organized_block_vals = {}
         for block_key, block_value in block_fields.items():
             sub_dict = {}
@@ -369,11 +376,35 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                 sub_dict["zip_code"] = block_value
                 table_orm = self.dal.get_table_by_column("zip_code")
             elif block_key == "first_name":
+                logging.info(f"Processing for first_name block_key: {block_key}, block_value: {block_value}")
                 sub_dict["given_name"] = block_value
                 table_orm = self.dal.get_table_by_column("given_name")
             elif block_key == "birthdate":
                 sub_dict["dob"] = block_value
                 table_orm = self.dal.get_table_by_column("dob")
+            elif block_key == "suffix":
+                logging.info(f"Processing block_key for suffix: {block_key}, block_value: {block_value}")
+                sub_dict["suffix"] = block_value
+                table_orm = self.dal.get_table_by_column("suffix")
+            elif block_key == "ssn":
+                sub_dict["ssn"] = block_value
+                table_orm = self.dal.get_table_by_column("ssn")
+            elif block_key == "id_type":
+                sub_dict["id_type"] = block_value
+                table_orm = self.dal.get_table_by_column("id_type")
+            elif block_key == "id_value":
+                sub_dict["id_value"] = block_value
+                table_orm = self.dal.get_table_by_column("id_value")
+            elif block_key == "id_assigning_authority":
+                sub_dict["id_assigning_authority"] = block_value
+                table_orm = self.dal.get_table_by_column("id_assigning_authority")
+            elif block_key == "second_first_name":
+                logging.info(f"Processing block_key for second_first_name: {block_key}, block_value: {block_value}")
+                sub_dict["second_first_name"] = block_value
+                table_orm = self.dal.get_table_by_column("given_name")
+            elif block_key == "middle":
+                sub_dict["middle"] = block_value
+                table_orm = self.dal.get_table_by_column("middle")
             elif block_key == "mrn":
                 sub_dict["patient_identifier"] = block_value
                 # mrn specific criteria
@@ -383,6 +414,7 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                 sub_dict[block_key] = block_value
                 table_orm = self.dal.get_table_by_column(block_key)
             if table_orm is not None:
+                logging.debug(f"Table ORM: {table_orm.name}, Sub Dict: {sub_dict}")
                 if table_orm.name in organized_block_vals.keys():
                     organized_block_vals[table_orm.name]["criteria"].update(sub_dict)
                 else:
@@ -391,6 +423,7 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                         "criteria": sub_dict,
                     }
             else:
+                logging.debug(f"Table ORM not found for block key: {block_key}")
                 continue
         return organized_block_vals
 
@@ -528,6 +561,7 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                     for field in table_fields.keys():
                         selection_criteria = "first"
                         if field == "given_name":
+                            logging.debug(f"Field: {field}, Value: {value}")
                             selection_criteria = "all"
 
                         value = extract_value_with_resource_path(
@@ -535,6 +569,7 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                             table_fields.get(field),
                             selection_criteria=selection_criteria,
                         )
+                        logging.debug(f"Extracted Value for {field}: {value}")
                         # Create given_name table in records
                         if field == "given_name":
                             given_name_table_records = self._extract_given_names(
@@ -546,10 +581,10 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                                 for given_name_table_record in given_name_table_records:
                                     records[field].append(given_name_table_record)
                             continue
-                        record[field] = value
+                        logging.debug(f"Field: {field}, Value: {value}")
 
                     table_records.append(record)
-
+            logging.debug(f"Table: {table}, Records: {table_records}")
             records[table] = table_records
 
         return records
@@ -572,6 +607,13 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                     "given_name_index": idx,
                 }
                 table_records.append(record)
+            # Add the second given name separately
+            if len(given_names) > 1:
+                second_first_name_record = {
+                    "name_id": name_id,
+                    "second_first_name": given_names[1]
+                }
+            table_records.append(second_first_name_record)
         else:
             record = {
                 "name_id": name_id,

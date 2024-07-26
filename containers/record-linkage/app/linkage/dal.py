@@ -236,6 +236,7 @@ class DataAccessLayer(object):
                         primary_key_column = table.primary_key.c[0]
 
                         for record in records:
+                            logging.info(f"Record to insert: {record}")
                             n_records += 1
                             if return_primary_keys:
                                 logging.info("Returned primary keys")
@@ -244,6 +245,7 @@ class DataAccessLayer(object):
                                     .values(record)
                                     .returning(primary_key_column)
                                 )
+                                logging.info(f"Executing statement: {statement}")
                                 logging.info(
                                     f"""Starting statement execution getting
                                     new_primary_key for record #{n_records}at:
@@ -295,6 +297,7 @@ class DataAccessLayer(object):
                 logging.info(
                     f"Starting INSERT statement execution at:{datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
                 )
+                logging.info(f"Executing statement: {statement}")
                 session.execute(text(statements))
                 logging.info(
                     f"Done with INSERT statement execution at:{datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa

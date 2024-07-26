@@ -19,6 +19,7 @@ from app.linkage.utils import extract_value_with_resource_path
 LINKING_FIELDS_TO_FHIRPATHS = {
     "first_name": "Patient.name.given",
     "last_name": "Patient.name.family",
+    "middle": "Patient.name.middle",
     "birthdate": "Patient.birthDate",
     "address": "Patient.address.line",
     "zip": "Patient.address.postalCode",
@@ -26,6 +27,12 @@ LINKING_FIELDS_TO_FHIRPATHS = {
     "state": "Patient.address.state",
     "sex": "Patient.gender",
     "mrn": "Patient.identifier.where(type.coding.code='MR').value",
+    "suffix": "Patient.name.suffix",
+    "id_type": "Patient.identifier.id_type",
+    "id_value": "Patient.identifier.id_value",
+    "id_assigning_authority": "Patient.identifier.id_assigning_authority",
+    "ssn": "Patient.identifier.ssn",
+    "second_first_name" : "Patient.name.given[1]",
 }
 
 
@@ -127,6 +134,12 @@ def extract_blocking_values_from_record(
     - zip
     - sex
     - mrn
+    New fields
+    - suffix
+    - ssn
+    - id_type 
+    - id_value
+    - id_assigning_authority
 
     Currently supported transformations on extracted fields:
     - first4: the first four characters of the value
@@ -1018,7 +1031,7 @@ def _flatten_patient_field_helper(resource: dict, field: str) -> any:
     future loops over the elements don't disrupt the flow of the matching
     algorithm.
     """
-    if field == "first_name":
+    if field in ["first_name"]:
         vals = extract_value_with_resource_path(
             resource, LINKING_FIELDS_TO_FHIRPATHS[field], selection_criteria="all"
         )

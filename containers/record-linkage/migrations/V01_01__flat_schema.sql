@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS name (
     name_id UUID DEFAULT uuid_generate_v4 (),
     patient_id UUID,
     last_name VARCHAR(255),
+    middle VARCHAR(225),
+    suffix VARCHAR(225),
     type VARCHAR(100),
     PRIMARY KEY (name_id),
     CONSTRAINT fk_name_to_patient FOREIGN KEY(patient_id) REFERENCES patient(patient_id)
@@ -32,6 +34,7 @@ CREATE TABLE IF NOT EXISTS given_name (
     name_id UUID,
     given_name VARCHAR(255),
     given_name_index INTEGER,
+    second_first_name VARCHAR(225),
     PRIMARY KEY (given_name_id),
     CONSTRAINT fk_given_to_name FOREIGN KEY(name_id) REFERENCES name(name_id)
 );
@@ -43,6 +46,10 @@ CREATE TABLE IF NOT EXISTS identifier (
     type_code VARCHAR(255),
     type_display VARCHAR(255),
     type_system VARCHAR(255),
+    ssn VARCHAR(225),
+    id_type VARCHAR(225),
+    id_value VARCHAR(225),
+    id_assigning_authority VARCHAR(225),
     PRIMARY KEY (identifier_id),
     CONSTRAINT fk_ident_to_patient FOREIGN KEY(patient_id) REFERENCES patient(patient_id)
 );
