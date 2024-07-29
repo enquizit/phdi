@@ -22,6 +22,7 @@ FUZZY_THRESHOLDS = {
     "zip": 0.95,
 }
 
+
 DIBBS_BASIC = [
     {
         "funcs": {
@@ -71,6 +72,7 @@ DIBBS_ENHANCED = [
             "similarity_measure": "JaroWinkler",
             "thresholds": FUZZY_THRESHOLDS,
             "true_match_threshold": 12.2,
+            "human_review_threshold": 10.0,  # Example value for human review threshold
             "log_odds": LOG_ODDS_SCORES,
         },
     },
@@ -91,6 +93,7 @@ DIBBS_ENHANCED = [
             "similarity_measure": "JaroWinkler",
             "thresholds": FUZZY_THRESHOLDS,
             "true_match_threshold": 17.0,
+            "human_review_threshold": 15.0,  # Example value for human review threshold
             "log_odds": LOG_ODDS_SCORES,
         },
     },
