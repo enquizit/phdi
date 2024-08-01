@@ -21,6 +21,10 @@ CREATE TABLE IF NOT EXISTS patient (
 CREATE TABLE IF NOT EXISTS name (
     name_id UUID DEFAULT uuid_generate_v4 (),
     patient_id UUID,
+    second_first_name VARCHAR(225),
+    suffix VARCHAR(225),
+    middle_name VARCHAR(225),
+    second_middle_name VARCHAR(225),
     last_name VARCHAR(255),
     type VARCHAR(100),
     PRIMARY KEY (name_id),
@@ -40,6 +44,7 @@ CREATE TABLE IF NOT EXISTS identifier (
     identifier_id UUID DEFAULT uuid_generate_v4 (),
     patient_id UUID,
     patient_identifier VARCHAR(255),
+    id_assigning_authority VARCHAR(225),
     type_code VARCHAR(255),
     type_display VARCHAR(255),
     type_system VARCHAR(255),

@@ -12,6 +12,12 @@ LOG_ODDS_SCORES = {
     "sex": 0.7510419059643679,
     "state": 0.022376768992488694,
     "zip": 4.975031471124867,
+    "suffix" : 6.849475906891162,
+    "id_assigning_authority" : 6.849475906891162,
+    "second_first_name" : 6.849475906891162,
+    "phone_number" : 6.849475906891162,
+    "middle_name" : 6.849475906891162,
+    "second_middle_name" : 6.849475906891162,
 }
 FUZZY_THRESHOLDS = {
     "first_name": 0.9,
@@ -20,6 +26,13 @@ FUZZY_THRESHOLDS = {
     "address": 0.9,
     "city": 0.92,
     "zip": 0.95,
+    "suffix" : 0.8,
+    "id_assigning_authority" : 0.8,
+    "phone_number" : 0.8,
+    "second_first_name": 0.9,
+    "middle_name" : 0.9,
+    "second_middle_name" : 0.8,
+    "phone_number": 0.8,
 }
 
 
@@ -58,8 +71,8 @@ DIBBS_BASIC = [
 DIBBS_ENHANCED = [
     {
         "funcs": {
-            "first_name": "feature_match_log_odds_fuzzy_compare",
-            "last_name": "feature_match_log_odds_fuzzy_compare",
+            "second_first_name": "feature_match_log_odds_fuzzy_compare",
+            "second_middle_name": "feature_match_log_odds_fuzzy_compare",
         },
         "blocks": [
             {"value": "birthdate"},
@@ -72,14 +85,14 @@ DIBBS_ENHANCED = [
             "similarity_measure": "JaroWinkler",
             "thresholds": FUZZY_THRESHOLDS,
             "true_match_threshold": 12.2,
-            "human_review_threshold": 10.0,  # Example value for human review threshold
+            "human_review_threshold": 9.0,  # Example value for human review threshold
             "log_odds": LOG_ODDS_SCORES,
         },
     },
     {
         "funcs": {
-            "address": "feature_match_log_odds_fuzzy_compare",
-            "birthdate": "feature_match_log_odds_fuzzy_compare",
+            "suffix": "feature_match_log_odds_fuzzy_compare",
+            "phone_number": "feature_match_log_odds_fuzzy_compare",
         },
         "blocks": [
             {"value": "zip"},
@@ -93,7 +106,7 @@ DIBBS_ENHANCED = [
             "similarity_measure": "JaroWinkler",
             "thresholds": FUZZY_THRESHOLDS,
             "true_match_threshold": 17.0,
-            "human_review_threshold": 15.0,  # Example value for human review threshold
+            "human_review_threshold": 12.0,  # Example value for human review threshold
             "log_odds": LOG_ODDS_SCORES,
         },
     },

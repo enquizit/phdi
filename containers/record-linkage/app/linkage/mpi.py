@@ -72,7 +72,11 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                 "fields": {
                     "last_name": "family",
                     "given_name": "given",
+                    "second_first_name": "secondFirstName",
                     "type": "use",
+                    "suffix": "suffix",
+                    "middle_name": "middle",
+                    "second_middle_name" : "secondMiddle",
                 },
             },
             "phone_number": {
@@ -112,6 +116,7 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                     "type_code": "type.coding[0].code",
                     "type_display": "type.coding[0].display",
                     "type_system": "type.coding[0].system",
+                    "id_assigning_authority": "assigner",
                 },
             },
         }
@@ -371,9 +376,27 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
             elif block_key == "first_name":
                 sub_dict["given_name"] = block_value
                 table_orm = self.dal.get_table_by_column("given_name")
+            elif block_key == "second_first_name":
+                sub_dict["second_first_name"] = block_value
+                table_orm = self.dal.get_table_by_column("second_first_name")
             elif block_key == "birthdate":
                 sub_dict["dob"] = block_value
                 table_orm = self.dal.get_table_by_column("dob")
+            elif block_key == "phone_number":
+                sub_dict["phone_number"] = block_value
+                table_orm = self.dal.get_table_by_column("phone_number")
+            elif block_key == "suffix":
+                sub_dict["suffix"] = block_value
+                table_orm = self.dal.get_table_by_column("suffix")
+            elif block_key == "middle_name":
+                sub_dict["middle_name"] = block_value
+                table_orm = self.dal.get_table_by_column("middle_name")
+            elif block_key == "second_middle_name":
+                sub_dict["second_middle_name"] = block_value
+                table_orm = self.dal.get_table_by_column("second_middle_name")
+            elif block_key == "phone_number":
+                sub_dict["phone_number"] = block_value
+                table_orm = self.dal.get_table_by_column("phone_number")
             elif block_key == "mrn":
                 sub_dict["patient_identifier"] = block_value
                 # mrn specific criteria
@@ -417,24 +440,29 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
         # when we decide to add phone numbers into
         # the blocking data
         #
-        #  phone_sub_query = (
-        #     select(
-        #         self.dal.PHONE_TABLE.c.phone_number.label("phone_number"),
-        #         self.dal.PHONE_TABLE.c.type.label("phone_type"),
-        #         self.dal.PHONE_TABLE.c.patient_id.label("patient_id"),
-        #     )
-        #     .where(self.dal.PHONE_TABLE.c.type.in_(["home", "cell"]))
-        #     .subquery()
-        # )
+        phone_sub_query = (
+            select(
+                self.dal.PHONE_TABLE.c.phone_number.label("phone_number"),
+                self.dal.PHONE_TABLE.c.type.label("phone_type"),
+                self.dal.PHONE_TABLE.c.patient_id.label("patient_id"),
+            )
+            .where(self.dal.PHONE_TABLE.c.type.in_(["home", "cell"]))
+            .subquery()
+        )
 
         query = (
             select(
                 self.dal.PATIENT_TABLE.c.patient_id,
                 self.dal.PATIENT_TABLE.c.person_id,
                 self.dal.PATIENT_TABLE.c.dob.label("birthdate"),
+                self.dal.ID_TABLE.c.id_assigning_authority,
                 self.dal.PATIENT_TABLE.c.sex,
                 id_sub_query.c.mrn,
                 self.dal.NAME_TABLE.c.last_name,
+                self.dal.NAME_TABLE.c.suffix,
+                self.dal.NAME_TABLE.c.second_first_name,
+                self.dal.NAME_TABLE.c.middle_name,
+                self.dal.NAME_TABLE.c.second_middle_name,
                 # Aggregate the given names into an array ordered by the name index
                 array_agg(
                     aggregate_order_by(
@@ -442,12 +470,8 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                         self.dal.GIVEN_NAME_TABLE.c.given_name_index.asc(),
                     )
                 ).label("given_name"),
-                # TODO: keeping this here for the time
-                # when we decide to add phone numbers into
-                # the blocking data
-                #
-                # phone_sub_query.c.phone_number,
-                # phone_sub_query.c.phone_type,
+                phone_sub_query.c.phone_number,
+                phone_sub_query.c.phone_type,
                 self.dal.ADDRESS_TABLE.c.line_1.label("address"),
                 self.dal.ADDRESS_TABLE.c.zip_code.label("zip"),
                 self.dal.ADDRESS_TABLE.c.city,
@@ -458,19 +482,22 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
             )
             .outerjoin(self.dal.NAME_TABLE)
             .outerjoin(self.dal.GIVEN_NAME_TABLE)
-            # TODO: keeping this here for the time
-            # when we decide to add phone numbers into
-            # the blocking data
-            #
-            # .outerjoin(phone_sub_query)
+            .outerjoin(phone_sub_query)
             .outerjoin(self.dal.ADDRESS_TABLE)
             .group_by(
                 self.dal.PATIENT_TABLE.c.patient_id,
                 self.dal.PATIENT_TABLE.c.person_id,
                 "birthdate",
                 self.dal.PATIENT_TABLE.c.sex,
+                self.dal.ID_TABLE.c.id_assigning_authority,
+                phone_sub_query.c.phone_number,
+                phone_sub_query.c.phone_type,
                 id_sub_query.c.mrn,
                 self.dal.NAME_TABLE.c.last_name,
+                self.dal.NAME_TABLE.c.middle_name,
+                self.dal.NAME_TABLE.c.second_first_name,
+                self.dal.NAME_TABLE.c.second_middle_name,
+                self.dal.NAME_TABLE.c.suffix,
                 self.dal.NAME_TABLE.c.name_id,
                 "address",
                 "zip",

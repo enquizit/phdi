@@ -18,6 +18,7 @@ from app.linkage.utils import extract_value_with_resource_path
 
 LINKING_FIELDS_TO_FHIRPATHS = {
     "first_name": "Patient.name.given",
+    "second_first_name": "Patient.name.seconfFirstName",
     "last_name": "Patient.name.family",
     "birthdate": "Patient.birthDate",
     "address": "Patient.address.line",
@@ -26,6 +27,12 @@ LINKING_FIELDS_TO_FHIRPATHS = {
     "state": "Patient.address.state",
     "sex": "Patient.gender",
     "mrn": "Patient.identifier.where(type.coding.code='MR').value",
+    "suffix": "Patient.name.suffix",
+    "id_assigning_authority": "Patient.identifier.assigner",
+    "phone_number": "Patient.telecom.where(system='phone').value",
+    "phone_type": "Patient.telecom.where(system='phone').use",
+    "middle_name": "Patient.name.middle",
+    "second_middle_name": "Patient.name.secondMiddle",
 }
 
 
@@ -887,6 +894,8 @@ def _compare_records_field_helper(
     feature_funcs: dict,
     **kwargs,
 ) -> bool:
+    logging.info(f"feature_funcs: {feature_funcs}")
+    logging.info(f"feature_col: {feature_col}")
     if feature_col == "first_name":
         return _compare_name_elements(
             record, mpi_patient, feature_funcs, feature_col, col_to_idx, **kwargs
@@ -896,6 +905,7 @@ def _compare_records_field_helper(
             record, mpi_patient, feature_funcs, feature_col, col_to_idx, **kwargs
         )
     else:
+        logging.info(f"inside else statement")
         return feature_funcs[feature_col](
             record, mpi_patient, feature_col, col_to_idx, **kwargs
         )
