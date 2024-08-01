@@ -12,12 +12,12 @@ LOG_ODDS_SCORES = {
     "sex": 0.7510419059643679,
     "state": 0.022376768992488694,
     "zip": 4.975031471124867,
-    "suffix" : 6.849475906891162,
-    "id_assigning_authority" : 6.849475906891162,
-    "second_first_name" : 6.849475906891162,
-    "phone_number" : 6.849475906891162,
-    "middle_name" : 6.849475906891162,
-    "second_middle_name" : 6.849475906891162,
+    "suffix" : 10.126641103800338, # dob
+    "id_assigning_authority" : 0,
+    "second_last_name" : 6.849475906891162, #first name
+    "phone_number" : 4.975031471124867, # zip
+    "middle_name" : 6.350720397426025,  # last name
+    "second_middle_name" : 0.3051262572525359, # mrn
 }
 FUZZY_THRESHOLDS = {
     "first_name": 0.9,
@@ -28,11 +28,11 @@ FUZZY_THRESHOLDS = {
     "zip": 0.95,
     "suffix" : 0.8,
     "id_assigning_authority" : 0.8,
-    "phone_number" : 0.8,
-    "second_first_name": 0.9,
-    "middle_name" : 0.9,
-    "second_middle_name" : 0.8,
-    "phone_number": 0.8,
+    "phone_number" : 0.7,
+    "second_last_name": 0.75,
+    "middle_name" : 0.6,
+    "second_middle_name" : 0.6,
+    "phone_number": 0.6,
 }
 
 
@@ -71,7 +71,7 @@ DIBBS_BASIC = [
 DIBBS_ENHANCED = [
     {
         "funcs": {
-            "second_first_name": "feature_match_log_odds_fuzzy_compare",
+            "second_last_name": "feature_match_log_odds_fuzzy_compare",
             "second_middle_name": "feature_match_log_odds_fuzzy_compare",
         },
         "blocks": [
@@ -84,7 +84,7 @@ DIBBS_ENHANCED = [
         "kwargs": {
             "similarity_measure": "JaroWinkler",
             "thresholds": FUZZY_THRESHOLDS,
-            "true_match_threshold": 12.2,
+            "true_match_threshold": 17.2,
             "human_review_threshold": 9.0,  # Example value for human review threshold
             "log_odds": LOG_ODDS_SCORES,
         },
@@ -105,7 +105,7 @@ DIBBS_ENHANCED = [
         "kwargs": {
             "similarity_measure": "JaroWinkler",
             "thresholds": FUZZY_THRESHOLDS,
-            "true_match_threshold": 17.0,
+            "true_match_threshold": 23.0,
             "human_review_threshold": 12.0,  # Example value for human review threshold
             "log_odds": LOG_ODDS_SCORES,
         },

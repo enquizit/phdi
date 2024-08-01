@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS patient (
 CREATE TABLE IF NOT EXISTS name (
     name_id UUID DEFAULT uuid_generate_v4 (),
     patient_id UUID,
-    second_first_name VARCHAR(225),
+    second_last_name VARCHAR(225),
     suffix VARCHAR(225),
     middle_name VARCHAR(225),
     second_middle_name VARCHAR(225),

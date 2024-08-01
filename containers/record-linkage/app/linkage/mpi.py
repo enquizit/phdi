@@ -72,7 +72,7 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                 "fields": {
                     "last_name": "family",
                     "given_name": "given",
-                    "second_first_name": "secondFirstName",
+                    "second_last_name": "secondLastName",
                     "type": "use",
                     "suffix": "suffix",
                     "middle_name": "middle",
@@ -376,9 +376,9 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
             elif block_key == "first_name":
                 sub_dict["given_name"] = block_value
                 table_orm = self.dal.get_table_by_column("given_name")
-            elif block_key == "second_first_name":
-                sub_dict["second_first_name"] = block_value
-                table_orm = self.dal.get_table_by_column("second_first_name")
+            elif block_key == "second_last_name":
+                sub_dict["second_last_name"] = block_value
+                table_orm = self.dal.get_table_by_column("second_last_name")
             elif block_key == "birthdate":
                 sub_dict["dob"] = block_value
                 table_orm = self.dal.get_table_by_column("dob")
@@ -460,7 +460,7 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                 id_sub_query.c.mrn,
                 self.dal.NAME_TABLE.c.last_name,
                 self.dal.NAME_TABLE.c.suffix,
-                self.dal.NAME_TABLE.c.second_first_name,
+                self.dal.NAME_TABLE.c.second_last_name,
                 self.dal.NAME_TABLE.c.middle_name,
                 self.dal.NAME_TABLE.c.second_middle_name,
                 # Aggregate the given names into an array ordered by the name index
@@ -495,7 +495,7 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
                 id_sub_query.c.mrn,
                 self.dal.NAME_TABLE.c.last_name,
                 self.dal.NAME_TABLE.c.middle_name,
-                self.dal.NAME_TABLE.c.second_first_name,
+                self.dal.NAME_TABLE.c.second_last_name,
                 self.dal.NAME_TABLE.c.second_middle_name,
                 self.dal.NAME_TABLE.c.suffix,
                 self.dal.NAME_TABLE.c.name_id,

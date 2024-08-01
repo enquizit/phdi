@@ -18,7 +18,7 @@ from app.linkage.utils import extract_value_with_resource_path
 
 LINKING_FIELDS_TO_FHIRPATHS = {
     "first_name": "Patient.name.given",
-    "second_first_name": "Patient.name.seconfFirstName",
+    "second_last_name": "Patient.name.seconfLastName",
     "last_name": "Patient.name.family",
     "birthdate": "Patient.birthDate",
     "address": "Patient.address.line",
@@ -105,8 +105,9 @@ def eval_log_odds_cutoff(feature_comparisons: List, **kwargs) -> bool:
         raise KeyError("Cutoff threshold for true matches must be passed.")
     if "human_review_threshold" not in kwargs:
         raise KeyError("Cutoff threshold for human review must be passed.")
-
+    logging.info(f"feature_comparisons: {feature_comparisons}")
     score = sum(feature_comparisons)
+    logging.info(f"Score in eval_log_odds_cutoff:{score}")
     is_match = score >= kwargs["true_match_threshold"]
     needs_human_review = (
         kwargs["human_review_threshold"] <= score < kwargs["true_match_threshold"]
@@ -351,24 +352,30 @@ def feature_match_log_odds_fuzzy_compare(
     in which they occur in order in the data.
     :return: A float of the score the feature comparison earned.
     """
+    logging.info(f"Parameters in feature_match_log_odds_fuzzy_compare")
+    logging.info(f"feature_col: {record_i}")
+    logging.info(f"feature_col: {record_j}")
+    logging.info(f"feature_col: {feature_col}")
+    logging.info(f"col_to_idx: {col_to_idx}")
     if "log_odds" not in kwargs:
         raise KeyError("Mapping of columns to m/u log-odds must be provided.")
     threshold = 0.7
     if "threshold" in kwargs:
         threshold = kwargs["threshold"]
     col_odds = kwargs["log_odds"][feature_col]
+    logging.info(f"col_odds: {col_odds}")
     idx = col_to_idx[feature_col]
 
     # Convert datetime obj to str using helper function
     if feature_col == "birthdate":
         record_i[idx] = datetime_to_str(record_i[idx])
         record_j[idx] = datetime_to_str(record_j[idx])
-
+    logging.info(f"(record_i[idx], record_j[idx]: {record_i[idx]} and  {record_j[idx]}")
     score = compare_strings(record_i[idx], record_j[idx], "JaroWinkler")
-
+    logging.info(f"Score in feature match log odds fuzzy: {score}")
     if score < threshold:
         score = 0.0
-
+    logging.info(f"score * col_odds: {score * col_odds}")
     return score * col_odds
 
 
@@ -549,6 +556,7 @@ def link_record_against_mpi(
         logging.info(
             f"Starting _find_strongest_link at: {datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}"  # noqa
         )
+        logging.info(f"linkage_scores: {linkage_scores}")
         person_id = _find_strongest_link(linkage_scores)
         matched = True
         logging.info(
@@ -646,6 +654,7 @@ def match_within_block(
                 )
                 for feature_col in feature_funcs
             ]
+            logging.info(f"Inside match_with_block. feature_comps: {feature_comps} ")
 
             # If it's a match, store the result
             is_match = match_eval(feature_comps, **kwargs)
@@ -1116,6 +1125,8 @@ def _match_within_block_cluster_ratio(
     :return: A list of 2-tuples of the form (i,j), where i,j give the indices
       in the block of data of records deemed to match.
     """
+    logging.info(f"inside _match_within_block_cluster_ratio")
+    logging.info(f"block: {block}")
     clusters = []
     for i in range(len(block)):
         # Base case
