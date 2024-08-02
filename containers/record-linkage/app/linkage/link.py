@@ -360,19 +360,16 @@ def feature_match_log_odds_fuzzy_compare(
     if "log_odds" not in kwargs:
         raise KeyError("Mapping of columns to m/u log-odds must be provided.")
     threshold = 0.7
-    if "threshold" in kwargs:
-        threshold = kwargs["threshold"]
+    if "thresholds" in kwargs:
+        thresholds = kwargs["thresholds"]
     col_odds = kwargs["log_odds"][feature_col]
-    logging.info(f"col_odds: {col_odds}")
     idx = col_to_idx[feature_col]
-
+    threshold = thresholds[feature_col]
     # Convert datetime obj to str using helper function
     if feature_col == "birthdate":
         record_i[idx] = datetime_to_str(record_i[idx])
         record_j[idx] = datetime_to_str(record_j[idx])
-    logging.info(f"(record_i[idx], record_j[idx]: {record_i[idx]} and  {record_j[idx]}")
     score = compare_strings(record_i[idx], record_j[idx], "JaroWinkler")
-    logging.info(f"Score in feature match log odds fuzzy: {score}")
     if score < threshold:
         score = 0.0
     logging.info(f"score * col_odds: {score * col_odds}")

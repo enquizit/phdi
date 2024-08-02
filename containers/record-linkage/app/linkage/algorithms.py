@@ -84,7 +84,7 @@ DIBBS_ENHANCED = [
         "kwargs": {
             "similarity_measure": "JaroWinkler",
             "thresholds": FUZZY_THRESHOLDS,
-            "true_match_threshold": 17.2,
+            "true_match_threshold": 12.2,
             "human_review_threshold": 9.0,  # Example value for human review threshold
             "log_odds": LOG_ODDS_SCORES,
         },
@@ -105,8 +105,8 @@ DIBBS_ENHANCED = [
         "kwargs": {
             "similarity_measure": "JaroWinkler",
             "thresholds": FUZZY_THRESHOLDS,
-            "true_match_threshold": 23.0,
-            "human_review_threshold": 12.0,  # Example value for human review threshold
+            "true_match_threshold": 13.0,
+            "human_review_threshold": 10.0,  # Example value for human review threshold
             "log_odds": LOG_ODDS_SCORES,
         },
     },
