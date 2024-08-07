@@ -98,6 +98,16 @@ CREATE TABLE IF NOT EXISTS external_person (
     CONSTRAINT fk_ext_person_to_source FOREIGN KEY(external_source_id) REFERENCES external_source(external_source_id)
 );
 
+CREATE TABLE IF NOT EXISTS configurations (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    belongingness_ratio FLOAT NOT NULL,
+    thresholds JSONB NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 COMMIT;
 
 INSERT INTO external_source (external_source_id, external_source_name, external_source_description)

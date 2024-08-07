@@ -11,6 +11,7 @@ from fastapi import status
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import BaseModel, Field, validator
+from fastapi import FastAPI, Depends
 from typing import Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import Column, Integer, String, Float, JSON
@@ -24,6 +25,7 @@ from app.linkage.mpi import DIBBsMPIConnectorClient
 from app.utils import get_settings
 from app.utils import read_json_from_assets
 from app.utils import run_migrations
+from app.linkage.dal import dal
 
 # Ensure MPI is configured as expected.
 run_migrations()
@@ -214,3 +216,29 @@ async def link_record(
             "updated_bundle": input_bundle,
             "message": f"Could not connect to database: {err}",
         }
+    
+#  models for saving algorithm (data elements) configuration
+class Threshold(BaseModel):
+    m: int
+    u: int
+    value: float
+
+    @validator("value")
+    def check_threshold_value(cls, v):
+        if not 0 <= v <= 1:
+            raise ValueError("Threshold value must be between 0 and 1")
+        return v
+
+class SaveConfigurationsRequest(BaseModel):
+    name: str
+    belongingness_ratio: float
+    thresholds: Dict[str, Threshold]
+
+@app.post("/configurations/save-data-elements")
+async def save_configurations(configurations: dict):
+    try:
+        new_id = dal.save_configuration_to_db(configurations)
+        return {"message": "Configurations saved successfully", "id": new_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+

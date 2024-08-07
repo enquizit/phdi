@@ -6,10 +6,12 @@ from typing import List
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData
 from sqlalchemy import select
-from sqlalchemy import Table
+from sqlalchemy import create_engine, Table, Column, Integer, String, Float, JSON, TIMESTAMP, MetaData
+from sqlalchemy.sql import func
 from sqlalchemy import text
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import SQLAlchemyError
 
 
 class DataAccessLayer(object):
@@ -37,7 +39,10 @@ class DataAccessLayer(object):
         self.ADDRESS_TABLE = None
         self.EXTERNAL_PERSON_TABLE = None
         self.EXTERNAL_SOURCE_TABLE = None
+        self.configutations = None
         self.TABLE_LIST = []
+        self.metadata = MetaData()
+        
 
     def get_connection(
         self,
@@ -60,15 +65,19 @@ class DataAccessLayer(object):
           “overflow”
         :return: None
         """
-
-        # create engine/connection
-        self.engine = create_engine(
-            engine_url,
-            client_encoding="utf8",
-            echo=engine_echo,
-            pool_size=pool_size,
-            max_overflow=max_overflow,
-        )
+        try:
+            self.engine = create_engine(
+                engine_url,
+                client_encoding="utf8",
+                echo=engine_echo,
+                pool_size=pool_size,
+                max_overflow=max_overflow,
+            )
+            self.connection = self.engine.connect()  # Establish connection
+            self.metadata.bind = self.engine
+            print("Database connection established.")
+        except Exception as e:
+            print(f"An error occurred while establishing a connection: {e}")
 
     def initialize_schema(self) -> None:
         """
@@ -108,6 +117,39 @@ class DataAccessLayer(object):
         self.TABLE_LIST.append(self.ID_TABLE)
         self.TABLE_LIST.append(self.PHONE_TABLE)
         self.TABLE_LIST.append(self.ADDRESS_TABLE)
+
+    def initialize_config_schema(self):
+        # Define tables and their columns
+        Table(
+            'configurations', self.metadata,
+            Column('id', Integer, primary_key=True, autoincrement=True),
+            Column('name', String(255), nullable=False),
+            Column('belongingness_ratio', Float, nullable=False),
+            Column('thresholds', JSON, nullable=False),
+            Column('created_at', TIMESTAMP, server_default=func.now()),
+            Column('updated_at', TIMESTAMP, server_default=func.now(), onupdate=func.now())
+        )
+        # Create all tables in the metadata
+        try:
+            self.metadata.create_all(self.engine)
+            print("Schema initialized successfully.")
+        except Exception as e:
+            print(f"An error occurred while initializing schema: {e}")
+
+    def get_configurations(self) -> List[dict]:
+        """
+        Retrieve all configurations from the database.
+        """
+        try:
+            if self.engine is None:
+                raise ValueError("Database engine is not initialized.")
+            config_table = Table("configurations", self.Meta, autoload_with=self.engine)
+            with self.get_session() as session:
+                query = session.query(config_table).all()
+                return [dict(row) for row in query]
+        except SQLAlchemyError as e:
+            logging.error(f"An error occurred while retrieving configurations: {e}")
+            return []
 
     @contextmanager
     def transaction(self) -> None:
@@ -394,3 +436,54 @@ class DataAccessLayer(object):
             return False
         else:
             return column_name in table.c
+        
+    def save_configuration_to_db(
+        self,
+        configurations: dict,
+        schema_name: str = "configurations",
+    ) -> dict:
+        """
+        Save configuration settings to the database.
+        """
+        try:
+            if self.engine is None:
+                raise ValueError("Database engine is not initialized.")
+            config_table = Table(schema_name, self.Meta, autoload_with=self.engine)
+            results = self.bulk_insert_list(config_table, [configurations])
+            return {"status": "success", "results": results}
+        except Exception as e:
+            logging.error(f"An error occurred while saving configuration to the database: {e}")
+            return {"status": "error", "message": str(e)}
+        
+    def get_session(self) -> scoped_session:
+        """
+        Get a new session from the sessionmaker.
+        """
+        if self.engine is None:
+            raise ValueError("Database engine is not initialized.")
+        Session = scoped_session(sessionmaker(bind=self.engine))
+        return Session()
+
+    def execute_query(self, query: str) -> List[dict]:
+        """
+        Execute a raw SQL query and return results.
+        """
+        with self.get_connection() as connection:
+            result = connection.execute(text(query))
+            return [dict(row) for row in result]
+        
+    def get_configurations(self) -> List[dict]:
+        """
+        Retrieve all configurations from the database.
+        """
+        try:
+            if self.engine is None:
+                raise ValueError("Database engine is not initialized.")
+            config_table = Table("configurations", self.Meta, autoload_with=self.engine)
+            with self.get_session() as session:
+                query = session.query(config_table).all()
+                return [dict(row) for row in query]
+        except SQLAlchemyError as e:
+            logging.error(f"An error occurred while retrieving configurations: {e}")
+            return []
+

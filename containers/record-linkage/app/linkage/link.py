@@ -35,6 +35,12 @@ LINKING_FIELDS_TO_FHIRPATHS = {
     "second_middle_name": "Patient.name.secondMiddle",
 }
 
+LINK_CONFIG_TO_RESOURCE ={
+    "name": "name",
+    "threshold":"thresholds",
+    "belongingness_ratio": "belongingness_ratio"
+}
+
 
 def compile_match_lists(match_lists: List[dict], cluster_mode: bool = False):
     """

@@ -50,6 +50,7 @@ class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
             max_overflow=max_overflow,
         )
         self.dal.initialize_schema()
+        self.dal.initialize_config_schema()
         self.column_to_fhirpaths = {
             "patient": {
                 "root_path": "Patient",
