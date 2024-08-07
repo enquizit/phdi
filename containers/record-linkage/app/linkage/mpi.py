@@ -18,7 +18,6 @@ from app.linkage.core import BaseMPIConnectorClient
 from app.linkage.dal import DataAccessLayer
 from app.linkage.utils import extract_value_with_resource_path
 from app.linkage.utils import load_mpi_env_vars_os
-from app.main import SaveConfigurationsRequest
 
 
 class DIBBsMPIConnectorClient(BaseMPIConnectorClient):
