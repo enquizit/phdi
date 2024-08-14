@@ -1,5 +1,6 @@
 import datetime
 import logging
+import json
 from contextlib import contextmanager
 from typing import List
 
@@ -12,6 +13,10 @@ from sqlalchemy import text
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.dialects.postgresql import JSONB
+
+from app.linkage.utils import load_mpi_env_vars_os
+
 
 
 class DataAccessLayer(object):
@@ -39,7 +44,7 @@ class DataAccessLayer(object):
         self.ADDRESS_TABLE = None
         self.EXTERNAL_PERSON_TABLE = None
         self.EXTERNAL_SOURCE_TABLE = None
-        self.configutations = None
+        self.configurations = None
         self.TABLE_LIST = []
         self.metadata = MetaData()
         
@@ -104,6 +109,7 @@ class DataAccessLayer(object):
         self.EXTERNAL_SOURCE_TABLE = Table(
             "external_source", self.Meta, autoload_with=self.engine
         )
+        self.configurations = Table("configurations", self.Meta, autoload_with=self.engine)
 
         # order of the list determines the order of
         # inserts due to FK constraints
@@ -117,6 +123,7 @@ class DataAccessLayer(object):
         self.TABLE_LIST.append(self.ID_TABLE)
         self.TABLE_LIST.append(self.PHONE_TABLE)
         self.TABLE_LIST.append(self.ADDRESS_TABLE)
+        self.TABLE_LIST.append(self.configurations)
 
     def initialize_config_schema(self):
         # Define tables and their columns
@@ -437,40 +444,80 @@ class DataAccessLayer(object):
         else:
             return column_name in table.c
         
+    def insert_configurations(self, table: Table, configurations: dict):
+        """
+        Inserts the values in the configurations to the respective table.
+        """
+        with self.transaction() as session:
+            logging.info(f"Started the session to insert the configurations into the database")
+            
+            if table.name == "configurations":
+                logging.info(f"The table being inserted: {table}")
+
+                # Convert the 'thresholds' dictionary to a JSON-serializable format
+                configurations['thresholds'] = json.dumps(configurations['thresholds'])
+
+                # Insert into the table
+                insert_stmt = table.insert().values(
+                    name=configurations.get("name"),
+                    belongingness_ratio=configurations.get("belongingness_ratio"),
+                    thresholds=configurations.get("thresholds"),
+                    created_at=datetime.datetime.now(),
+                    updated_at=datetime.datetime.now()
+                )
+                result = session.execute(insert_stmt)
+                session.commit()
+                return result.inserted_primary_key[0]
+
     def save_configuration_to_db(
         self,
         configurations: dict,
         schema_name: str = "configurations",
     ) -> dict:
         """
-        Save configuration settings to the database.
+        Save configuration settings for the data elements to the database.
         """
+        logging.info(f"Started save_configuration_to_db at {datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}")
+        
         try:
+            # Ensure the engine is initialized and connected
             if self.engine is None:
-                raise ValueError("Database engine is not initialized.")
+                dbsettings = load_mpi_env_vars_os()
+                dbuser = dbsettings.get("user")
+                dbname = dbsettings.get("dbname")
+                dbpwd = dbsettings.get("password")
+                dbhost = dbsettings.get("host")
+                dbport = dbsettings.get("port")
+                self.get_connection(
+                    engine_url=f"postgresql+psycopg2://{dbuser}:{dbpwd}@{dbhost}:{dbport}/{dbname}",
+                    pool_size=5,
+                    max_overflow=10,
+                )
+            
+            # Bind the MetaData to the engine
+            if not hasattr(self.Meta, 'is_bound') or not self.Meta.is_bound:
+                self.Meta.reflect(bind=self.engine)
+            
+            # Connect to the database
+            self.connection = self.engine.connect()
+            self.initialize_config_schema()
+
+            # Get the configurations table
             config_table = Table(schema_name, self.Meta, autoload_with=self.engine)
-            results = self.bulk_insert_list(config_table, [configurations])
-            return {"status": "success", "results": results}
+            logging.info(f"Configuration Table initialized: {config_table}")
+
+            # Insert configurations within the session context
+            with self.get_session() as session:
+                results = self.insert_configurations(config_table, configurations)
+                session.commit()
+                logging.info(f"Results inside save db config: {results}")
+                return {"status": "success", "results": results}
+            
         except Exception as e:
             logging.error(f"An error occurred while saving configuration to the database: {e}")
             return {"status": "error", "message": str(e)}
-        
-    def get_session(self) -> scoped_session:
-        """
-        Get a new session from the sessionmaker.
-        """
-        if self.engine is None:
-            raise ValueError("Database engine is not initialized.")
-        Session = scoped_session(sessionmaker(bind=self.engine))
-        return Session()
 
-    def execute_query(self, query: str) -> List[dict]:
-        """
-        Execute a raw SQL query and return results.
-        """
-        with self.get_connection() as connection:
-            result = connection.execute(text(query))
-            return [dict(row) for row in result]
+
         
     def get_configurations(self) -> List[dict]:
         """

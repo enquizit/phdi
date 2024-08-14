@@ -1,0 +1,66 @@
+{
+    "name": "SaveConfigurations",  
+    "belongingness_ratio": 0.9,    
+      "first_name": {
+        "m": 1,  
+        "u": 3,  
+        "value": 0.8  
+      },
+      "last_name": {
+        "m": 1,
+        "u": 3,
+        "value": 0.85  
+      },
+      "birthdate": {
+        "m": 1,
+        "u": 3,
+        "value": 0.95  
+      },
+      "address": {
+        "m": 1,
+        "u": 3,
+        "value": 0.9  
+      },
+      "city": {
+        "m": 1,
+        "u": 3,
+        "value": 0.92  
+      },
+      "zip": {
+        "m": 1,
+        "u": 3,
+        "value": 0.95  
+      },
+      "suffix": {
+        "m": 1,
+        "u": 3,
+        "value": 0.8  
+      },
+      "id_assigning_authority": {
+        "m": 1,
+        "u": 3,
+        "value": 0.8  
+      },
+      "phone_number": {
+        "m": 1,
+        "u": 3,
+        "value": 0.7  
+      },
+      "second_last_name": {
+        "m": 1,
+        "u": 3,
+        "value": 0.75  
+      },
+      "middle_name": {
+        "m": 1,
+        "u": 3,
+        "value": 0.6  
+      },
+      "second_middle_name": {
+        "m": 1,
+        "u": 1,
+        "value": 0.6  
+      }
+}
+  
+  

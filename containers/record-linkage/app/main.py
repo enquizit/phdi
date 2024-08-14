@@ -8,8 +8,6 @@ from fastapi import Body
 from fastapi import Response
 from fastapi import HTTPException
 from fastapi import status
-from pydantic import BaseModel
-from pydantic import Field
 from pydantic import BaseModel, Field, validator
 from fastapi import FastAPI, Depends
 from typing import Dict, Any
@@ -25,7 +23,7 @@ from app.linkage.mpi import DIBBsMPIConnectorClient
 from app.utils import get_settings
 from app.utils import read_json_from_assets
 from app.utils import run_migrations
-from app.linkage.dal import dal
+from app.linkage.dal import DataAccessLayer
 
 # Ensure MPI is configured as expected.
 run_migrations()
@@ -137,6 +135,9 @@ sample_link_record_responses = read_json_from_assets(
     "sample_link_record_responses.json"
 )
 
+# Sample request and responses for save-data-elements-config for documentation
+sample_save_data_elements_request = read_json_from_assets("sample_save_data_elements_request.json")
+sample_save_data_elements_response = read_json_from_assets("sample_save_data_elements_response.json")
 
 @app.post(
     "/link-record", status_code=200, responses={200: sample_link_record_responses}
@@ -229,16 +230,32 @@ class Threshold(BaseModel):
             raise ValueError("Threshold value must be between 0 and 1")
         return v
 
-class SaveConfigurationsRequest(BaseModel):
-    name: str
-    belongingness_ratio: float
-    thresholds: Dict[str, Threshold]
+class SaveDataElementsRequest(BaseModel):
+    name: Optional[str] = Field(
+        description="Name of the configuration to save data elements"
+    )
+    belongingness_ratio: float = Field(
+        description="Ratio indicating the degree of belongingness within the data elements"
+    )
+    thresholds: Dict[str, Threshold] = Field(
+        description="The data elements with the m, u and the threshold value. M, U probability is used to calculate the log-odds"
+    )
 
-@app.post("/configurations/save-data-elements")
-async def save_configurations(configurations: dict):
+class SaveDataElementsResponse(BaseModel):
+    message: str = Field(
+        description="Response message acknowledging if the configuration was saved successfully or not"
+    )
+    id: int = Field(
+        description="Returns the ID of the new configuration"
+    )
+@app.post("/configurations/save-data-elements-config")
+async def save_configurations(
+    input: Annotated[SaveDataElementsRequest, Body(examples=sample_save_data_elements_request)]):
     try:
-        new_id = dal.save_configuration_to_db(configurations)
+        dal = DataAccessLayer()
+        new_id = dal.save_configuration_to_db(input.dict())  # Save the input data as a dictionary
         return {"message": "Configurations saved successfully", "id": new_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
 
