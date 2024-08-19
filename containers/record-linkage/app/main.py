@@ -1,4 +1,5 @@
 import copy
+import logging
 from pathlib import Path
 from typing import Annotated
 from typing import Optional
@@ -257,5 +258,23 @@ async def save_configurations(
         return {"message": "Configurations saved successfully", "id": new_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+
+@app.delete("/api/configurations/{name}")
+async def delete_configuration(name: str):
+    try:
+        dal = DataAccessLayer()
+        deleted = dal.delete_configuration_by_name(name)
+        
+        if deleted:
+            return {"message": f"Configuration '{name}' deleted successfully."}
+        else:
+            raise HTTPException(status_code=404, detail=f"Configuration '{name}' not found.")
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")  
+        
+
+     
 
 

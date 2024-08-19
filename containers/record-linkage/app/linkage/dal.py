@@ -534,3 +534,60 @@ class DataAccessLayer(object):
             logging.error(f"An error occurred while retrieving configurations: {e}")
             return []
 
+
+    def delete_configuration_by_name(
+    self,
+    name: str,
+    schema_name: str = "configurations",
+) -> dict:
+        """
+        Delete a configuration from the database by its name.
+        """
+        logging.info(f"Started delete_configuration_by_name at {datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}")
+
+        try:
+            # Ensure the engine is initialized and connected
+            if self.engine is None:
+                dbsettings = load_mpi_env_vars_os()
+                dbuser = dbsettings.get("user")
+                dbname = dbsettings.get("dbname")
+                dbpwd = dbsettings.get("password")
+                dbhost = dbsettings.get("host")
+                dbport = dbsettings.get("port")
+                self.get_connection(
+                    engine_url=f"postgresql+psycopg2://{dbuser}:{dbpwd}@{dbhost}:{dbport}/{dbname}",
+                    pool_size=5,
+                    max_overflow=10,
+                )
+
+            # Bind the MetaData to the engine
+            if not hasattr(self.Meta, 'is_bound') or not self.Meta.is_bound:
+                self.Meta.reflect(bind=self.engine)
+
+            # Connect to the database
+            self.connection = self.engine.connect()
+            self.initialize_config_schema()
+
+            # Get the configurations table
+            config_table = Table(schema_name, self.Meta, autoload_with=self.engine)
+            logging.info(f"Configuration Table initialized: {config_table}")
+
+            # Delete the configuration by name within the session context
+            with self.get_session() as session:
+                delete_stmt = config_table.delete().where(config_table.c.name == name)
+                result = session.execute(delete_stmt)
+
+                # Check if any rows were deleted
+                if result.rowcount > 0:
+                    session.commit()
+                    logging.info(f"Configuration '{name}' deleted successfully.")
+                    return {"status": "success", "message": f"Configuration '{name}' deleted successfully."}
+                else:
+                    logging.warning(f"Configuration '{name}' not found.")
+                    return {"status": "error", "message": f"Configuration '{name}' not found."}
+
+        except Exception as e:
+            logging.error(f"An error occurred while deleting configuration from the database: {e}")
+            return {"status": "error", "message": str(e)}
+            
+
