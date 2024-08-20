@@ -1,5 +1,7 @@
 import datetime
+import random
 import logging
+import string
 import json
 from contextlib import contextmanager
 from typing import List
@@ -17,7 +19,13 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 from app.linkage.utils import load_mpi_env_vars_os
 
-
+def generate_custom_id():
+        """
+        Generates a custom ID with 3 random alphabets followed by 6 random digits.
+        """
+        letters = ''.join(random.choices(string.ascii_uppercase, k=3))
+        numbers = ''.join(random.choices(string.digits, k=3))
+        return f"{letters}{numbers}"
 
 class DataAccessLayer(object):
     """
@@ -45,6 +53,7 @@ class DataAccessLayer(object):
         self.EXTERNAL_PERSON_TABLE = None
         self.EXTERNAL_SOURCE_TABLE = None
         self.configurations = None
+        self.pass_configurations = None
         self.TABLE_LIST = []
         self.metadata = MetaData()
         
@@ -142,6 +151,29 @@ class DataAccessLayer(object):
             print("Schema initialized successfully.")
         except Exception as e:
             print(f"An error occurred while initializing schema: {e}")
+
+    def initialize_pass_config_schema(self):
+        # Define the pass_configurations table and its columns
+        Table(
+            'pass_configurations', self.metadata,
+            Column('id', Integer, primary_key=True, autoincrement=True),
+            Column('pass_name', String(255), nullable=False),
+            Column('description', String(255), nullable=False),
+            Column('index', Integer, nullable=False),
+            Column('lowerbound', Float, nullable=False),
+            Column('upperbound', Float, nullable=False),
+            Column('matching_criteria', JSON, nullable=False),
+            Column('blocks', JSON, nullable=False),
+            Column('status', String(255), nullable=False),  # This will store the active/inactive status
+            Column('created_at', TIMESTAMP, server_default=func.now()),
+            Column('updated_at', TIMESTAMP, server_default=func.now(), onupdate=func.now())
+        )
+        # Create all tables in the metadata
+        try:
+            self.metadata.create_all(self.engine)
+            print("Pass configurations schema initialized successfully.")
+        except Exception as e:
+            print(f"An error occurred while initializing pass configurations schema: {e}")
 
     def get_configurations(self) -> List[dict]:
         """
@@ -533,4 +565,80 @@ class DataAccessLayer(object):
         except SQLAlchemyError as e:
             logging.error(f"An error occurred while retrieving configurations: {e}")
             return []
+        
 
+    def insert_pass_configuration(self, table, data):
+        """
+        Inserts a new pass configuration into the database.
+        """
+        required_fields = ["name", "description", "lowerbound", "upperbound", "matchingCriteria", "blocks", "status"]
+        for field in required_fields:
+            if field not in data:
+                logging.error(f"Missing required field: {field}")
+                raise ValueError(f"One or more required fields are missing from the data: {field} is required.")
+        custom_id = generate_custom_id()
+        logging.info(f"Custom ID: {custom_id}")
+        insert_stmt = table.insert().values(
+            id=custom_id,
+            pass_name=data["name"],
+            description=data["description"],
+            lowerbound=data["lowerbound"],
+            upperbound=data["upperbound"],
+            matching_criteria=data["matchingCriteria"],
+            blocks=data["blocks"],
+            status=data["status"]
+        ).returning(table.c.id)
+        self.connection.execute(insert_stmt)
+        self.connection.commit()
+        pass_config_id = custom_id
+        return pass_config_id
+
+    def save_pass_config_to_db(
+        self,
+        configurations: dict,
+        schema_name: str = "pass_configurations",
+    ) -> dict:
+        """
+        Save pass configuration to the database.
+        """
+        logging.info(f"Started save_pass_config_to_db at {datetime.datetime.now().strftime('%m-%d-%yT%H:%M:%S.%f')}")
+        
+        # Log the configurations dictionary for debugging
+        logging.debug(f"Configurations data: {configurations}")
+
+        dbsettings = load_mpi_env_vars_os()
+        dbuser = dbsettings.get("user")
+        dbname = dbsettings.get("dbname")
+        dbpwd = dbsettings.get("password")
+        dbhost = dbsettings.get("host")
+        dbport = dbsettings.get("port")
+        self.get_connection(
+            engine_url=f"postgresql+psycopg2://{dbuser}:"
+            + f"{dbpwd}@{dbhost}:{dbport}/{dbname}",
+            pool_size=5,
+            max_overflow=10,
+        )
+        self.connection = self.engine.connect()
+        self.initialize_pass_config_schema()
+        try:
+            if self.engine is None:
+                raise ValueError("Database engine is not initialized.")
+            
+            config_table = Table(schema_name, self.Meta, autoload_with=self.engine)
+            logging.info(f"Configuration Table initialized: {config_table}")
+            
+            # Insert the configuration into the database
+            pass_config_id = self.insert_pass_configuration(config_table, configurations)
+            
+            logging.info(f"Pass configuration saved with ID: {pass_config_id}")
+            
+            # Return the formatted response
+            return {
+                "message": "You have successfully saved the pass configuration",
+                "pass_config_id": pass_config_id,
+                "active": configurations.get("status", "Inactive"),  # Safely get status
+                "name": configurations["name"]
+            }
+        except Exception as e:
+            logging.error(f"An error occurred while saving pass configuration to the database: {e}")
+            return {"status": "error", "message": str(e)}

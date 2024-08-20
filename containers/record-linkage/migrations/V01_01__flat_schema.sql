@@ -107,6 +107,18 @@ CREATE TABLE IF NOT EXISTS configurations (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS pass_configurations (
+    id VARCHAR(10) PRIMARY KEY,
+    pass_name VARCHAR(255) NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    lowerbound FLOAT NOT NULL,
+    upperbound FLOAT NOT NULL,
+    matching_criteria JSONB NOT NULL,
+    blocks JSONB NOT NULL,
+    status VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 COMMIT;
 

@@ -1,0 +1,52 @@
+{
+    "name": "firstName_address", 
+    "description": "",
+    "index": 0,
+    "lowerbound": 10.0,
+    "upperbound": 15.0,
+    "activate": "True",
+    "matchingCriteria": {
+      "first_name": {"method":"Jarowrinkler"},
+      "last_name": {"method":"Exact"},
+      "address": {"method":"Jarowrinkler"}
+    }, 
+    "blocks": {
+      "first_name": {
+        "transformation": "first4"  
+      },
+      "last_name": {
+        "transformation": "soundex"  
+      },
+      "birthdate": {
+        "transformation": "last4"  
+      },
+      "address": {
+        "transformation": "first4"  
+      },
+      "city": {
+        "transformation": "first4"  
+      },
+      "zip": {
+        "transformation": "last4"  
+      },
+      "suffix": {
+        "transformation": "first4"  
+      },
+      "id_assigning_authority": {
+        "transformation": "last4"  
+      },
+      "phone_number": {
+        "transformation": "first4"  
+      },
+      "second_last_name": {
+        "transformation": "last4"  
+      },
+      "middle_name": {
+        "transformation": "first4"  
+      },
+      "second_middle_name": {
+        "transformation": "last4"  
+      }
+    }
+  }
+  

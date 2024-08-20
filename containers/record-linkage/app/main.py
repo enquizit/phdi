@@ -1,4 +1,5 @@
 import copy
+import logging
 from pathlib import Path
 from typing import Annotated
 from typing import Optional
@@ -139,6 +140,9 @@ sample_link_record_responses = read_json_from_assets(
 sample_save_data_elements_request = read_json_from_assets("sample_save_data_elements_request.json")
 sample_save_data_elements_response = read_json_from_assets("sample_save_data_elements_response.json")
 
+# Sample request for save pass
+sample_save_pass_config_request = read_json_from_assets("sample_save_pass_config_request.json")
+
 @app.post(
     "/link-record", status_code=200, responses={200: sample_link_record_responses}
 )
@@ -258,4 +262,79 @@ async def save_configurations(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
+# Models for saving pass configuration
+class MatchingCriterion(BaseModel):
+    method: str
+
+class BlockTransformation(BaseModel):
+    transformation: str
+
+class SavePassConfigRequest(BaseModel):
+    name: str = Field(
+        description="Name of the configuration"
+    )
+    description: str = Field(
+        description="Description of the configuration"
+    )
+    index: int = Field(
+        description="Index of the pass configuration"
+    )
+    lowerbound: float = Field(
+        description="Lower bound for the matching algorithm"
+    )
+    upperbound: float = Field(
+        description="Upper bound for the matching algorithm"
+    )
+    matchingCriteria: Dict[str, MatchingCriterion] = Field(
+        description="Matching criteria for the configuration"
+    )
+    blocks: Dict[str, BlockTransformation] = Field(
+        description="Block transformations for the configuration"
+    )
+    status: str = Field(
+        description="Indicates if the saved configuration is active or inactive"
+    )
+
+class SavePassConfigResponse(BaseModel):
+    message: str = Field(
+        description="Response message indicating the result of the save operation"
+    )
+    pass_config_id: str = Field(
+        description="ID of the saved pass configuration"
+    )
+    status: str = Field(
+        description="Indicates if the saved configuration is active or inactive"
+    )
+    name: str = Field(
+        description="Name of the saved configuration"
+    )
+
+@app.post("/configurations/save-pass-config")
+async def save_pass_configurations(
+    input: SavePassConfigRequest 
+):
+    try:
+        dal = DataAccessLayer()
+        new_config = dal.save_pass_config_to_db(input.dict())  # Save the input data as a dictionary
+        
+        # Extract the necessary fields
+        pass_config_id = new_config.get("pass_config_id")
+        active_status = input.status # This should be directly from the input
+        config_name = input.name  # This should be directly from the input
+        
+        # Log the returned values for debugging
+        logging.info(f"pass_config_id: {pass_config_id}, active_status: {active_status}, config_name: {config_name}")
+        
+        # Check if any of the fields are None
+        if pass_config_id is None or active_status is None or config_name is None:
+            raise ValueError("One or more required fields are missing.")
+        
+        return {
+            "message": "You have successfully saved the pass configuration",
+            "pass_config_id": pass_config_id,
+            "status": active_status,
+            "name": config_name
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
