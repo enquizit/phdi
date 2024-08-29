@@ -1,15 +1,14 @@
 from linkage.parse import to_patient
 from copy import deepcopy
 
-test_data = {
-    "resourceType": "Patient",
+test_data = {"resourceType": "Patient",
     "gender": "male",
     "name": [
         {
             "family": "Washington",
             "given": ["Rob", "Robert"],
             "use": "legal",
-            "suffix": "JR",
+            "suffix": "JR"
         }
     ],
     "address": [
@@ -18,7 +17,7 @@ test_data = {
             "city": "Sarahbury",
             "state": "MA",
             "postalCode": "64832",
-            "country": "USA",
+            "country": "USA"
         }
     ],
     "identifier": [
@@ -30,16 +29,15 @@ test_data = {
                     {
                         "system": "http://hl7.org/fhir/v2/0203",
                         "code": "MR",
-                        "display": "Medical Record Number",
+                        "display": "Medical Record Number"
                     }
                 ],
-                "text": "MRN",
+                "text": "MRN"
             },
-            "assigner": "Hospital",
+            "assigner": "Hospital"
         }
     ],
-    "birthDate": "2003-10-08",
-}
+    "birthDate": "2003-10-08"}
 
 
 def test_all():

@@ -1,5 +1,4 @@
 from linkage.models.patient import Patient
-from linkage.models.identification_types import IdentificationType
 from linkage.models.configuration import (
     Configuration,
     Pass,

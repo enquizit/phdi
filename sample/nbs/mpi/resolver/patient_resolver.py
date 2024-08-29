@@ -137,6 +137,8 @@ p.person_parent_uid in (
 
 
 def fetch_patients(ids: set[int], connection: Connection) -> list[Patient]:
+    if len(ids) == 0:
+        return []
     placeholders = ",".join(["?"] * len(ids))
     patient_query = f"{query}{placeholders});"
 

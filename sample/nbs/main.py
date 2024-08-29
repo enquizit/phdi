@@ -1,55 +1,89 @@
 import uvicorn
 from fastapi import FastAPI
 from linkage.link import link_record
-from linkage.models.patient import Patient, Name
-from linkage.models.configuration import (
-    Configuration,
-    Pass,
-    Function,
-    Arguments,
-    Field,
-    SimilarityMeasure,
-    BlockCriteria,
-)
+from linkage.models.configuration import Configuration
 from mpi.nbs_mpi import NbsMpiClient
+from linkage.parse import to_patient
+from response import MatchResponse, MatchType
 
 app = FastAPI()
 
-
-patient = Patient(
-    None,
-    None,
-    Name("legal", "Doe", "suffix", ["First", "middle", "second-middle"]),
-    None,
-    [],
-)
-
-blocking_criteria = [BlockCriteria(Field.FIRST_NAME, None)]
-
-config = Configuration(
-    [
-        Pass(
-            {Field.FIRST_NAME: Function.LOG_ODDS_FUZZY_MATCH},
-            blocking_criteria,
-            Arguments(
-                log_odds={Field.FIRST_NAME: 2},
-                field_thresholds={Field.FIRST_NAME: 0.7},
-                cluster_ratio=0.5,
-                true_match_threshold=1,
-                human_review_threshold=None,
-                similarity_measure=SimilarityMeasure.JAROWINKLER,
-            ),
-        )
-    ]
-)
-
+## Sample request
+# {
+#   "patient_resource": {"resourceType": "Patient",
+#     "gender": "male",
+#     "name": [
+#         {
+#             "family": "Washington",
+#             "given": ["First", "Robert"],
+#             "use": "legal",
+#             "suffix": "JR"
+#         }
+#     ],
+#     "address": [
+#         {
+#             "line": ["3461 Adams Neck", "Northeast"],
+#             "city": "Sarahbury",
+#             "state": "MA",
+#             "postalCode": "64832",
+#             "country": "USA"
+#         }
+#     ],
+#     "identifier": [
+#         {
+#             "system": "http://hospital.com/mrn",
+#             "value": "551-79-0423",
+#             "type": {
+#                 "coding": [
+#                     {
+#                         "system": "http://hl7.org/fhir/v2/0203",
+#                         "code": "MR",
+#                         "display": "Medical Record Number"
+#                     }
+#                 ],
+#                 "text": "MRN"
+#             },
+#             "assigner": "Hospital"
+#         }
+#     ],
+#     "birthDate": "2003-10-08"},
+#   "configuration": {
+#     "passes": [
+#       {
+#         "functions": {
+#           "first_name": "log_odds_fuzzy_match"
+#         },
+#         "blocks": [
+#           {"field": "first_name", "transform": null}
+#         ],
+#         "args": {
+#           "log_odds": {
+#             "first_name": 2
+#           },
+#           "field_thresholds": {
+#             "first_name": 1
+#           },
+#           "cluster_ratio": 0.5,
+#           "true_match_threshold": 1.4,
+#           "human_review_threshold": 0,
+#           "similarity_measure": "jarowinkler"
+#         }
+#       }
+#     ]
+#   }
+# }
 mpi_client = NbsMpiClient()
 
 
-@app.get("/match")
-async def match() -> str:
-    result = link_record(patient, config, mpi_client)
-    return f"Found result: {result}"
+@app.post("/match")
+async def match(patient_resource: dict, configuration: Configuration) -> MatchResponse:
+    patient = to_patient(patient_resource)
+    if patient is None:
+        return MatchResponse(None, MatchType.NONE)
+    result = link_record(patient, configuration, mpi_client)
+    if result is None:
+        return MatchResponse(None, MatchType.NONE)
+    return MatchResponse(result, MatchType.EXACT)
 
 
 if __name__ == "__main__":
