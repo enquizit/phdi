@@ -5,6 +5,7 @@ from linkage.models.configuration import (
     Function,
     SimilarityMeasure,
 )
+from linkage.models.result import MatchType, ClusterRatio, Result
 from linkage.models.client import BaseMPIConnectorClient
 from linkage.compare import (
     match_first_four,
@@ -19,7 +20,7 @@ from linkage.block import get_field_value
 
 def link_record(
     patient: Patient, configuration: Configuration, mpi_client: BaseMPIConnectorClient
-) -> str | None:
+) -> Result:
     """
     For each Pass in the configuration do the following:
     1. Fetch blocks of patient data using the provided mpi_client
@@ -29,50 +30,44 @@ def link_record(
     Once all Passes have been completed, return the person_id with the highest belongingness_ratio,
     or None if no matches are found
     """
-    linkage_scores: dict[str, float] = {}
+    # Pare down from full BelongingnessRatio to {person: id, score: score, match_type: MatchType}
+    linkage_scores: list[Result] = []
     for linkage_pass in configuration.passes:
         # Fetch matching patients based on configured blocks
         matching_patients = mpi_client.get_patient_data(patient, linkage_pass.blocks)
         # Create dict of {person_id -> [Patient]} for returned data
         clusters = cluster_patients(matching_patients)
 
-        # For each person in the cluster, do a comparison based on the pass configuration, if score exceeds threshol
+        # For each person in the cluster, determine if it is a match for the cluster
         for person_id in clusters:
-            # Calculate if the incoming patient record meets the cluster ratio (number of matches / number of returned records for person)
-            belongingness_ratio = calculate_belongingness(
+            cluster_ratio = calculate_belongingness(
                 patient, clusters[person_id], linkage_pass
             )
-            if (
-                belongingness_ratio is not None
-                and belongingness_ratio > linkage_pass.args.cluster_ratio
-            ):
-                linkage_scores[person_id] = belongingness_ratio
+            if cluster_ratio.exact_match >= linkage_pass.args.cluster_ratio:
+                linkage_scores.append(
+                    Result(person_id, cluster_ratio.exact_match, MatchType.EXACT)
+                )
+            elif cluster_ratio.human_review >= linkage_pass.args.human_review_threshold:
+                linkage_scores.append(
+                    Result(
+                        person_id, cluster_ratio.human_review, MatchType.HUMAN_REVIEW
+                    )
+                )
 
     # After all passes, find the strongest match if one exists
-    if len(linkage_scores) > 0:
-        return max(linkage_scores, key=linkage_scores.get)
+    if len(linkage_scores) == 0:
+        return Result(None, 0.0, MatchType.NONE)
+
+    best_match = max(linkage_scores, key=lambda x: x.cluster_ratio)
+    if best_match is not None and best_match.cluster_ratio > 0:
+        return best_match
     else:
-        return None
-
-
-def cluster_patients(block: list[Patient]) -> dict[str, list[Patient]]:
-    """
-    Combine a single list of patients into a dictionary of { person_id : list[Patient] }
-    """
-    clusters: dict[str, list[Patient]] = {}
-    for patient in block:
-        if patient.person_id is None:
-            raise ValueError("Invalid state, encountered patient lacking a person id")
-        if patient.person_id not in clusters:
-            clusters[patient.person_id] = []
-        clusters[patient.person_id].append(patient)
-
-    return clusters
+        return Result(None, 0.0, MatchType.NONE)
 
 
 def calculate_belongingness(
     patient: Patient, existing_patients: list[Patient], pass_config: Pass
-) -> float:
+) -> ClusterRatio:
     """
     Determine how well a patient record fits into a list of existing patient records.
     This is done by applying the supplied Pass configuration and calculating the number
@@ -80,17 +75,20 @@ def calculate_belongingness(
 
     If no records match, None is returned
     """
-    number_matched = 0
+    patient_count = len(existing_patients)
+    if patient_count == 0:
+        return ClusterRatio(0, MatchType.NONE)
+
+    matches: list[MatchType] = []
     for existing in existing_patients:
-        if apply_pass(patient, existing, pass_config):
-            number_matched += 1
-    if number_matched == 0:
-        return 0
-    else:
-        return number_matched / len(existing_patients)
+        matches.append(apply_pass(patient, existing, pass_config))
+
+    exact_ratio = matches.count(MatchType.EXACT) / patient_count
+    human_review_ratio = matches.count(MatchType.HUMAN_REVIEW) / patient_count
+    return ClusterRatio(exact_ratio, human_review_ratio)
 
 
-def apply_pass(a: Patient, b: Patient, pass_configuration: Pass) -> bool:
+def apply_pass(a: Patient, b: Patient, pass_configuration: Pass) -> MatchType:
     """
     Apply the specified Pass configuration to the provided Patient records.
     Return true if the total score calculated exceeds the configured true match threshold
@@ -111,7 +109,12 @@ def apply_pass(a: Patient, b: Patient, pass_configuration: Pass) -> bool:
             pass_configuration.args.similarity_measure,
         )
     # Check if score for pair meets threshold
-    return total_score >= pass_configuration.args.true_match_threshold
+    if total_score >= pass_configuration.args.true_match_threshold:
+        return MatchType.EXACT
+    elif total_score >= pass_configuration.args.human_review_threshold:
+        return MatchType.HUMAN_REVIEW
+    else:
+        return MatchType.NONE
 
 
 def calculate_score(
@@ -143,3 +146,18 @@ def calculate_score(
                 field_threshold,
             )
     return 0.0
+
+
+def cluster_patients(block: list[Patient]) -> dict[str, list[Patient]]:
+    """
+    Combine a single list of patients into a dictionary of { person_id : list[Patient] }
+    """
+    clusters: dict[str, list[Patient]] = {}
+    for patient in block:
+        if patient.person_id is None:
+            raise ValueError("Invalid state, encountered patient lacking a person id")
+        if patient.person_id not in clusters:
+            clusters[patient.person_id] = []
+        clusters[patient.person_id].append(patient)
+
+    return clusters

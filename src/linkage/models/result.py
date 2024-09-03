@@ -9,6 +9,13 @@ class MatchType(Enum):
 
 
 @dataclass
-class MatchResponse:
+class ClusterRatio:
+    exact_match: float
+    human_review: float
+
+
+@dataclass
+class Result:
     patient: int | None
-    matchType: MatchType
+    cluster_ratio: float
+    match_type: MatchType

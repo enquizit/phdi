@@ -4,7 +4,7 @@ from linkage.link import link_record
 from linkage.models.configuration import Configuration
 from mpi.nbs_mpi import NbsMpiClient
 from linkage.parse import to_patient
-from response import MatchResponse, MatchType
+from linkage.models.result import Result, MatchType
 
 app = FastAPI()
 
@@ -76,14 +76,11 @@ mpi_client = NbsMpiClient()
 
 
 @app.post("/match")
-async def match(patient_resource: dict, configuration: Configuration) -> MatchResponse:
+async def match(patient_resource: dict, configuration: Configuration) -> Result:
     patient = to_patient(patient_resource)
     if patient is None:
-        return MatchResponse(None, MatchType.NONE)
-    result = link_record(patient, configuration, mpi_client)
-    if result is None:
-        return MatchResponse(None, MatchType.NONE)
-    return MatchResponse(result, MatchType.EXACT)
+        return Result(None, 0.0, MatchType.NONE)
+    return link_record(patient, configuration, mpi_client)
 
 
 if __name__ == "__main__":
