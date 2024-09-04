@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Self
 from linkage.models.identification_types import IdentificationType
 from dataclasses import dataclass, field
 
@@ -30,21 +31,24 @@ class System(Enum):
     PHONE = "phone"
     EMAIL = "email"
 
+    @staticmethod
+    def from_str(value: str | None) -> Self | None:
+        if value is None:
+            return None
+        else:
+            match value.lower():
+                case "phone":
+                    return System.PHONE
+                case "email":
+                    return System.EMAIL
+                case _:
+                    return None
+
 
 @dataclass
 class Telecom:
     value: str
     system: System | None
-
-    def __init__(self, value: str, system: str | None):
-        self.value = value
-        match system:
-            case "phone":
-                self.system = System.PHONE
-            case "email":
-                self.system = System.EMAIL
-            case _:
-                self.system = None
 
 
 @dataclass
@@ -87,6 +91,10 @@ class Patient:
         if self.sex is not None and len(self.sex) > 0:
             return self.sex[0].lower()
         return None
+
+    def get_phone_number(self) -> str | None:
+        telecoms = [x for x in self.telecom if x.system == System.PHONE]
+        return telecoms[0].value if len(telecoms) > 0 else None
 
     def get_street_address(self) -> str | None:
         if self.address is not None and len(self.address.street) > 0:

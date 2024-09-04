@@ -99,7 +99,6 @@ async def match(
     if patient is None:
         return Response(None, 0.0, MatchType.NONE)
     response = link_record(patient, configuration, mpi_client)
-    print("log", log)
     if log is True:
         return response
     else:

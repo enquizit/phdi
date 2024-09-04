@@ -28,6 +28,8 @@ def get_field_value(patient: Patient, field: Field) -> str | None:
             return patient.birthdate
         case Field.CURRENT_SEX:
             return patient.get_sex()
+        case Field.TELEPHONE:
+            return patient.get_phone_number()
         case Field.STREET_ADDRESS:
             return patient.get_street_address()
         case Field.CITY:

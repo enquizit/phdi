@@ -10,6 +10,7 @@ class Field(Enum):
     SUFFIX = "suffix"
     BIRTHDATE = "birthdate"
     CURRENT_SEX = "current_sex"
+    TELEPHONE = "telephone"
     STREET_ADDRESS = "street_address"
     CITY = "city"
     STATE = "state"

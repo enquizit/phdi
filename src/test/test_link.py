@@ -48,6 +48,7 @@ def test_link_match():
         Name("legal", "Doe", "suffix", ["John", "middle", "second-middle"]),
         None,
         [],
+        [],
     )
     existing_patients = [
         Patient(
@@ -55,6 +56,7 @@ def test_link_match():
             None,
             Name("legal", "Doe", "suffix", ["Jon", "middle", "second-middle"]),
             None,
+            [],
             [],
             "patient_id_1",
             "person_id_1",
@@ -65,6 +67,7 @@ def test_link_match():
             Name("legal", "Doe", "suffix", ["Johnathan", "middle", "second-middle"]),
             None,
             [],
+            [],
             "patient_id_2",
             "person_id_1",
         ),
@@ -73,6 +76,7 @@ def test_link_match():
             None,
             Name("legal", "Smith", "suffix", ["Barbara", "middle", "second-middle"]),
             None,
+            [],
             [],
             "patient_id_3",
             "person_id_2",
@@ -112,6 +116,7 @@ def test_link_no_match():
         Name("legal", "Doe", "suffix", ["John", "middle", "second-middle"]),
         None,
         [],
+        [],
     )
     existing_patients = [
         Patient(
@@ -119,6 +124,7 @@ def test_link_no_match():
             None,
             Name("legal", "Smith", "suffix", ["Barbara", "middle", "second-middle"]),
             None,
+            [],
             [],
             "patient_id_3",
             "person_id_2",

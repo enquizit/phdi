@@ -4,6 +4,7 @@ from linkage.models.patient import (
     Address,
     Identification,
     Telecom,
+    System,
 )
 import fhirpathpy
 
@@ -93,7 +94,7 @@ def parse_telecom(patient_resource: str) -> list[Telecom]:
     return [
         Telecom(
             entry.get("value"),
-            entry.get("system"),
+            System.from_str(entry.get("system")),
         )
         for entry in telecoms
     ]

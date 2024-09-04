@@ -1,4 +1,11 @@
-from linkage.models.patient import Patient, Name, Identification, Address
+from linkage.models.patient import (
+    Patient,
+    Name,
+    Identification,
+    Address,
+    Telecom,
+    System,
+)
 from linkage.models.configuration import BlockCriteria, Transform, Field
 from linkage.block import get_block_value, transform_value, transform_identification
 
@@ -476,3 +483,44 @@ def test_zip_transform_last_four():
     )
     value = get_block_value(patient, BlockCriteria(Field.ZIP, Transform.LAST_FOUR))
     assert value == "alue"
+
+
+# Telephone number
+def test_phone_transform_none():
+    patient = Patient(
+        None,
+        None,
+        Name("", "family", "suffix", ["first", "middle", "second-middle"]),
+        None,
+        [Telecom("123-123-1234", System.PHONE)],
+    )
+    value = get_block_value(patient, BlockCriteria(Field.TELEPHONE, None))
+    assert value == "123-123-1234"
+
+
+def test_phone_transform_first_four():
+    patient = Patient(
+        None,
+        None,
+        Name("", "family", "suffix", ["first", "middle", "second-middle"]),
+        None,
+        [Telecom("123-123-1234", System.PHONE)],
+    )
+    value = get_block_value(
+        patient, BlockCriteria(Field.TELEPHONE, Transform.FIRST_FOUR)
+    )
+    assert value == "123-"
+
+
+def test_phone_transform_last_four():
+    patient = Patient(
+        None,
+        None,
+        Name("", "family", "suffix", ["first", "middle", "second-middle"]),
+        None,
+        [Telecom("123-123-1234", System.PHONE)],
+    )
+    value = get_block_value(
+        patient, BlockCriteria(Field.TELEPHONE, Transform.LAST_FOUR)
+    )
+    assert value == "1234"
