@@ -54,8 +54,7 @@ FROM
         SELECT 
           (
             SELECT
-			  REPLACE(REPLACE(tl.phone_nbr_txt,'-',''),' ','') telephoneNbr,
-              tl.extension_txt extensionTxt 
+			  REPLACE(REPLACE(tl.phone_nbr_txt,'-',''),' ','') value
             FROM 
               Entity_locator_participation elp WITH (NOLOCK)
               JOIN Tele_locator tl WITH (NOLOCK) ON elp.locator_uid = tl.tele_locator_uid 
@@ -75,7 +74,7 @@ FROM
         SELECT 
           (
             SELECT 
-              STRING_ESCAPE(tl.email_address, 'json') emailAddress 
+              STRING_ESCAPE(tl.email_address, 'json') value 
             FROM 
               Entity_locator_participation elp WITH (NOLOCK)
               JOIN Tele_locator tl WITH (NOLOCK) ON elp.locator_uid = tl.tele_locator_uid 
