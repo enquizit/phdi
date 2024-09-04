@@ -32,12 +32,9 @@ def link_record(
     For each Pass in the configuration do the following:
     1. Fetch blocks of patient data using the provided mpi_client
     2. Compare the provided patient to the fetched blocks using the provided configuration
-    3. Add the results to a dictionary: {person_id: str, belongingness_ratio: float}
 
-    Once all Passes have been completed, return the person_id with the highest belongingness_ratio,
-    or None if no matches are found
+    Once all Passes have been completed, find the linkage score with the highest belongingness/cluster ratio.
     """
-    # Pare down from full BelongingnessRatio to {person: id, score: score, match_type: MatchType}
     linkage_scores: list[LinkageScore] = []
     for linkage_pass in configuration.passes:
         # Fetch matching patients based on configured blocks
@@ -77,7 +74,7 @@ def link_record(
     if best_match is not None and best_match.score > 0:
         return Response(best_match.patient, best_match.match_type, best_match)
     else:
-        return Response(None, 0.0, MatchType.NONE)
+        return Response(None, MatchType.NONE, None)
 
 
 def calculate_belongingness(
@@ -88,11 +85,10 @@ def calculate_belongingness(
     This is done by applying the supplied Pass configuration and calculating the number
     of matches divided by the total number of existing records.
 
-    If no records match, None is returned
     """
     patient_count = len(existing_patients)
     if patient_count == 0:
-        return ClusterRatio(0, MatchType.NONE)
+        return ClusterRatio(0, 0, [])
 
     pass_results: list[PassResult] = []
     for existing in existing_patients:
@@ -105,8 +101,10 @@ def calculate_belongingness(
 
 def apply_pass(a: Patient, b: Patient, pass_configuration: Pass) -> PassResult:
     """
-    Apply the specified Pass configuration to the provided Patient records.
-    Return true if the total score calculated exceeds the configured true match threshold
+    Apply the specified Pass configuration to the provided Patient records. This is done by
+    calculating the scores by running each function on the specified field from the provided patient.
+    Once the scores have been calculated they are summed and compared against the provided thresholds to
+    determine the match_type.
     """
     scores: dict[Field, float] = {}
     total_score = 0.0
