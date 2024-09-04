@@ -5,7 +5,7 @@ from linkage.models.configuration import BlockCriteria, Field
 from linkage.models.client import BaseMPIConnectorClient
 from linkage.models.identification_types import IdentificationType
 from linkage.block import get_block_value
-from mpi.resolver.resolvers import (
+from nbs.mpi.resolver.resolvers import (
     resolve_first_name,
     resolve_middle_name,
     resolve_second_middle_name,
@@ -27,8 +27,9 @@ class NbsMpiClient(BaseMPIConnectorClient):
     conn: Connection
 
     def __init__(self):
-        DRIVER = "ODBC Driver"
-        SERVER = "127.0.0.1"
+        # View installed drivers: odbcinst -j
+        DRIVER = "ODBC Driver 18 for SQL Server"
+        SERVER = "nbs-mssql"
         PORT = "1433"
         DATABASE = "NBS_ODSE"
         USERNAME = "sa"

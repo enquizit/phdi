@@ -1,0 +1,15 @@
+services:
+  record-linkage:
+    build:
+      context: .
+    environment:
+      - TEST=TEST
+    ports:
+      - 8000:8000
+    networks:
+      - nbs
+
+networks:
+  nbs:
+    name: nbs
+    external: true  

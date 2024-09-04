@@ -1,5 +1,5 @@
 from pyodbc import Connection, Row
-from mpi.resolver.data_converter import (
+from nbs.mpi.resolver.data_converter import (
     to_name,
     to_address,
     to_identifications,

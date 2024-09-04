@@ -2,24 +2,24 @@ from pyodbc import Connection
 from linkage.models.configuration import Transform
 from linkage.models.patient import Patient
 from linkage.models.identification_types import IdentificationType
-from mpi.resolver.name_resolver import (
+from nbs.mpi.resolver.name_resolver import (
     fetch_first_name_block,
     fetch_last_name_block,
     fetch_middle_name_block,
     fetch_suffix_block,
     fetch_second_middle_name_block,
 )
-from mpi.resolver.birthdate_resolver import fetch_birthdate_block
-from mpi.resolver.address_resolver import (
+from nbs.mpi.resolver.birthdate_resolver import fetch_birthdate_block
+from nbs.mpi.resolver.address_resolver import (
     fetch_address_block,
     fetch_city_block,
     fetch_state_block,
     fetch_zip_block,
 )
-from mpi.resolver.identification_resolver import fetch_identification_block
-from mpi.resolver.patient_resolver import fetch_patients
-from mpi.resolver.sex_resolver import fetch_current_sex_block
-from mpi.resolver.phone_resolver import fetch_phone_block
+from nbs.mpi.resolver.identification_resolver import fetch_identification_block
+from nbs.mpi.resolver.patient_resolver import fetch_patients
+from nbs.mpi.resolver.sex_resolver import fetch_current_sex_block
+from nbs.mpi.resolver.phone_resolver import fetch_phone_block
 
 
 def resolve_first_name(

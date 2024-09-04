@@ -2,7 +2,7 @@ import uvicorn
 from fastapi import FastAPI
 from linkage.link import link_record
 from linkage.models.configuration import Configuration
-from mpi.nbs_mpi import NbsMpiClient
+from nbs.mpi.nbs_mpi import NbsMpiClient
 from linkage.parse import to_patient
 from linkage.models.result import MatchType, Response
 from dataclasses import dataclass
