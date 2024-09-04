@@ -57,7 +57,7 @@ class Patient:
     sex: str | None
     name: Name
     address: Address
-    telecom: list[Telecom] = field(default_factory=list)
+    telecoms: list[Telecom] = field(default_factory=list)
     identifications: list[Identification] = field(default_factory=list)
     patient_id: str | None = None
     person_id: str | None = None
@@ -93,7 +93,7 @@ class Patient:
         return None
 
     def get_phone_number(self) -> str | None:
-        telecoms = [x for x in self.telecom if x.system == System.PHONE]
+        telecoms = [x for x in self.telecoms if x.system == System.PHONE]
         return telecoms[0].value if len(telecoms) > 0 else None
 
     def get_street_address(self) -> str | None:

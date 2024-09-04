@@ -28,7 +28,7 @@ def to_patient(patient_resource: dict) -> Patient:
         birthdate=parse_birthdate(patient_resource),
         sex=parse_gender(patient_resource),
         address=parse_address(patient_resource),
-        telecom=parse_telecom(patient_resource),
+        telecoms=parse_telecom(patient_resource),
         identifications=parse_identifications(patient_resource),
     )
 

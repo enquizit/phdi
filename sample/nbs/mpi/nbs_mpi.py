@@ -11,6 +11,7 @@ from mpi.resolver.resolvers import (
     resolve_second_middle_name,
     resolve_last_name,
     resolve_birthdate,
+    resolve_phone,
     resolve_address,
     resolve_city,
     resolve_state,
@@ -80,6 +81,10 @@ class NbsMpiClient(BaseMPIConnectorClient):
                     # transform not currently supported
                     matching_patient_ids.update(
                         resolve_birthdate(field_value, self.conn)
+                    )
+                case Field.TELEPHONE:
+                    matching_patient_ids.update(
+                        resolve_phone(field_value, block_criteria.transform, self.conn)
                     )
                 case Field.STREET_ADDRESS:
                     matching_patient_ids.update(

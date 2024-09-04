@@ -19,6 +19,7 @@ from mpi.resolver.address_resolver import (
 from mpi.resolver.identification_resolver import fetch_identification_block
 from mpi.resolver.patient_resolver import fetch_patients
 from mpi.resolver.sex_resolver import fetch_current_sex_block
+from mpi.resolver.phone_resolver import fetch_phone_block
 
 
 def resolve_first_name(
@@ -43,6 +44,12 @@ def resolve_suffix(
     value: str | None, transform: Transform | None, connection: Connection
 ) -> list[str]:
     return fetch_suffix_block(value, transform, connection)
+
+
+def resolve_phone(
+    value: str | None, transform: Transform | None, connection: Connection
+) -> list[str]:
+    return fetch_phone_block(value, transform, connection)
 
 
 def resolve_current_sex(value: str | None, connection: Connection) -> list[str]:

@@ -3,6 +3,8 @@ from mpi.resolver.data_converter import (
     to_name,
     to_address,
     to_identifications,
+    to_telecom_phone,
+    to_telecom_email,
 )
 from linkage.models.patient import Patient
 
@@ -156,8 +158,16 @@ def to_patient(sql_result: Row) -> Patient:
     person_id = sql_result.person_parent_uid
     name = to_name(sql_result.name)
     address = to_address(sql_result.address)
+    telecoms = to_telecom_phone(sql_result.phone) + to_telecom_email(sql_result.email)
     identifications = to_identifications(sql_result.identification)
     patient = Patient(
-        birthdate, gender, name, address, identifications, patient_id, person_id
+        birthdate=birthdate,
+        sex=gender,
+        name=name,
+        address=address,
+        telecoms=telecoms,
+        identifications=identifications,
+        patient_id=patient_id,
+        person_id=person_id,
     )
     return patient

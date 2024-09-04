@@ -18,7 +18,8 @@ query = """
 def fetch_address_block(
     street: str | None, transform: Transform | None, connection: Connection
 ) -> list[str]:
-
+    if street is None:
+        return []
     match transform:
         case Transform.FIRST_FOUR:
             search_query = f"{query} AND LEFT(pl.street_addr1, 4) = LEFT(?, 4)"

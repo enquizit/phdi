@@ -1,7 +1,10 @@
+from linkage.models.patient import System
 from nbs.mpi.resolver.data_converter import (
     to_name,
     to_address,
     to_identifications,
+    to_telecom_phone,
+    to_telecom_email,
 )
 
 name_string = """
@@ -51,7 +54,19 @@ identification_string = """
     { "type": "SS", "assigningAuthority": "SSA", "value": "1234567890" },
     { "type": "AN", "assigningAuthority": "AK", "value": "4441" }
 ]
+"""
 
+phone_string = """
+[
+    {"value":"123-444-1111"},
+    {"value":"123-123-1234"}]
+"""
+
+email_string = """
+[
+    {"value":"email@email.org"},
+    {"value":"email@email.com"}
+]
 """
 
 
@@ -80,3 +95,23 @@ def test_identification_parse():
     assert identifications[1].type == "AN"
     assert identifications[1].assigning_authority == "AK"
     assert identifications[1].value == "4441"
+
+
+def test_phone_parse():
+    telecom = to_telecom_phone(phone_string)
+    assert len(telecom) == 2
+    assert telecom[0].system == System.PHONE
+    assert telecom[0].value == "123-444-1111"
+
+    assert telecom[1].system == System.PHONE
+    assert telecom[1].value == "123-123-1234"
+
+
+def test_email_parse():
+    telecom = to_telecom_email(email_string)
+    assert len(telecom) == 2
+    assert telecom[0].system == System.EMAIL
+    assert telecom[0].value == "email@email.org"
+
+    assert telecom[1].system == System.EMAIL
+    assert telecom[1].value == "email@email.com"

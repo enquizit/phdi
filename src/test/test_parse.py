@@ -71,9 +71,9 @@ def test_all():
     assert (patient.address.zip) == "64832"
 
     # Telecom
-    assert len(patient.telecom) == 1
-    assert patient.telecom[0].value == "(123) 456-7890"
-    assert patient.telecom[0].system == System.PHONE
+    assert len(patient.telecoms) == 1
+    assert patient.telecoms[0].value == "(123) 456-7890"
+    assert patient.telecoms[0].system == System.PHONE
 
     # Identification
     assert (len(patient.identifications)) == 1
@@ -254,18 +254,18 @@ def test_empty_telecom():
     patient_bundle = deepcopy(test_data)
     patient_bundle["telecom"] = None
     patient = to_patient(patient_bundle)
-    assert (len(patient.telecom)) == 0
+    assert (len(patient.telecoms)) == 0
 
 
 def test_empty_telecom_value():
     patient_bundle = deepcopy(test_data)
     patient_bundle["telecom"][0]["value"] = None
     patient = to_patient(patient_bundle)
-    assert (patient.telecom[0].value) is None
+    assert (patient.telecoms[0].value) is None
 
 
 def test_empty_telecom_system():
     patient_bundle = deepcopy(test_data)
     patient_bundle["telecom"][0]["system"] = None
     patient = to_patient(patient_bundle)
-    assert (patient.telecom[0].system) is None
+    assert (patient.telecoms[0].system) is None

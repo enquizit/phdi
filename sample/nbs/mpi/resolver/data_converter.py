@@ -1,5 +1,5 @@
 import json
-from linkage.models.patient import Name, Address, Identification
+from linkage.models.patient import Name, Address, Identification, Telecom, System
 
 
 def to_name(json_string: str | None) -> Name | None:
@@ -36,6 +36,31 @@ def to_address(json_string: str | None) -> Address | None:
         _get_value("state", json_object[0]),
         _get_value("zip", json_object[0]),
         [x for x in street_addresses if x is not None],
+    )
+
+
+def to_telecom_phone(json_string: str | None) -> list[Telecom]:
+    if json_string is None:
+        return []
+    json_object = json.loads(json_string)
+    if len(json_object) == 0:
+        return []
+    return [_to_telecom(x, System.PHONE) for x in json_object if x is not None]
+
+
+def to_telecom_email(json_string: str | None) -> list[Telecom]:
+    if json_string is None:
+        return []
+    json_object = json.loads(json_string)
+    if len(json_object) == 0:
+        return []
+    return [_to_telecom(x, System.EMAIL) for x in json_object if x is not None]
+
+
+def _to_telecom(telecom_dict: dict[str, str], system: System) -> Telecom:
+    return Telecom(
+        _get_value("value", telecom_dict),
+        system,
     )
 
 
