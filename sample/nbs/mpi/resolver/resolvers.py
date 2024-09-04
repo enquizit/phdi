@@ -6,6 +6,7 @@ from mpi.resolver.name_resolver import (
     fetch_first_name_block,
     fetch_last_name_block,
     fetch_middle_name_block,
+    fetch_second_middle_name_block,
 )
 from mpi.resolver.birthdate_resolver import fetch_birthdate_block
 from mpi.resolver.address_resolver import (
@@ -18,19 +19,25 @@ from mpi.resolver.identification_resolver import fetch_identification_block
 from mpi.resolver.patient_resolver import fetch_patients
 
 
-def resolve_first_name(
+def fetch_first_name_block(
     value: str | None, transform: Transform | None, connection: Connection
 ) -> list[str]:
     return fetch_first_name_block(value, transform, connection)
 
 
-def resolve_middle_name(
+def fetch_middle_name_block(
     value: str | None, transform: Transform | None, connection: Connection
 ) -> list[str]:
     return fetch_middle_name_block(value, transform, connection)
 
 
-def resolve_last_name(
+def fetch_second_middle_name_block(
+    value: str | None, transform: Transform | None, connection: Connection
+) -> list[str]:
+    return fetch_second_middle_name_block(value, transform, connection)
+
+
+def fetch_resolve_last_name_block(
     value: str | None, transform: Transform | None, connection: Connection
 ) -> list[str]:
     return fetch_last_name_block(value, transform, connection)

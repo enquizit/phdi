@@ -166,6 +166,47 @@ def test_middle_name_transform_last_four():
     assert value == "ddle"
 
 
+# Second middle name
+def test_second_middle_name_transform_none():
+    patient = Patient(
+        None,
+        None,
+        Name("", "family", "suffix", ["first", "middle", "second-middle"]),
+        None,
+        None,
+    )
+    value = get_block_value(patient, BlockCriteria(Field.SECOND_MIDDLE_NAME, None))
+    assert value == "second-middle"
+
+
+def test_second_middle_name_transform_first_four():
+    patient = Patient(
+        None,
+        None,
+        Name("", "family", "suffix", ["first", "middle", "second-middle"]),
+        None,
+        None,
+    )
+    value = get_block_value(
+        patient, BlockCriteria(Field.SECOND_MIDDLE_NAME, Transform.FIRST_FOUR)
+    )
+    assert value == "seco"
+
+
+def test_second_middle_name_transform_last_four():
+    patient = Patient(
+        None,
+        None,
+        Name("", "family", "suffix", ["first", "middle", "second-mid"]),
+        None,
+        None,
+    )
+    value = get_block_value(
+        patient, BlockCriteria(Field.SECOND_MIDDLE_NAME, Transform.LAST_FOUR)
+    )
+    assert value == "-mid"
+
+
 # last name
 def test_last_name_transform_none():
     patient = Patient(

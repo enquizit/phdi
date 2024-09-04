@@ -45,6 +45,11 @@ class Patient:
             return self.name.given[1]
         return None
 
+    def get_second_middle_name(self) -> str | None:
+        if self.name is not None and len(self.name.given) > 2:
+            return self.name.given[2]
+        return None
+
     def get_last_name(self) -> str | None:
         if self.name is not None:
             return self.name.family

@@ -10,6 +10,7 @@ from linkage.models.configuration import (
     Arguments,
     BlockCriteria,
 )
+from linkage.models.result import MatchType
 
 
 class TestMpiClient(BaseMPIConnectorClient):
@@ -100,7 +101,7 @@ def test_link_match():
         ),
         TestMpiClient(patient, blocking_criteria, existing_patients),
     )
-    assert link_results == "person_id_1"
+    assert link_results.patient == "person_id_1"
 
 
 def test_link_no_match():
@@ -146,4 +147,4 @@ def test_link_no_match():
         ),
         TestMpiClient(patient, blocking_criteria, existing_patients),
     )
-    assert link_results is None
+    assert link_results.match_type == MatchType.NONE

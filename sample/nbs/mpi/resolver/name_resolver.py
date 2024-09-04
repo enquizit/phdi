@@ -51,6 +51,24 @@ def fetch_middle_name_block(
         return [r.person_parent_uid for r in records]
 
 
+def fetch_second_middle_name_block(
+    name: str | None, transform: Transform | None, connection: Connection
+) -> list[str]:
+
+    match transform:
+        case Transform.FIRST_FOUR:
+            search_query = f"{query} AND LEFT(pn.middle_nm2, 4) = LEFT(?, 4)"
+        case Transform.LAST_FOUR:
+            search_query = f"{query} AND RIGHT(pn.middle_nm2, 4) = RIGHT(?, 4)"
+        case _:
+            search_query = f"{query} AND pn.middle_nm2 = ?"
+
+    with connection.cursor() as cursor:
+        cursor.execute(search_query, name)
+        records = cursor.fetchall()
+        return [r.person_parent_uid for r in records]
+
+
 def fetch_last_name_block(
     name: str | None, transform: Transform | None, connection: Connection
 ) -> list[str]:

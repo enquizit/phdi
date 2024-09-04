@@ -8,6 +8,7 @@ from linkage.block import get_block_value
 from mpi.resolver.resolvers import (
     fetch_first_name_block,
     fetch_middle_name_block,
+    fetch_second_middle_name_block,
     fetch_last_name_block,
     fetch_birthdate_block,
     fetch_address_block,
@@ -55,6 +56,12 @@ class NbsMpiClient(BaseMPIConnectorClient):
                 case Field.MIDDLE_NAME:
                     matching_patient_ids.update(
                         fetch_middle_name_block(
+                            field_value, block_criteria.transform, self.conn
+                        )
+                    )
+                case Field.SECOND_MIDDLE_NAME:
+                    matching_patient_ids.update(
+                        fetch_second_middle_name_block(
                             field_value, block_criteria.transform, self.conn
                         )
                     )

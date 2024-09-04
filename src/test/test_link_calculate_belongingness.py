@@ -57,7 +57,8 @@ def test_calculate_belongingness_two_thirds():
         ),
     )
     belongingness = calculate_belongingness(patient, existing_patients, pass_config)
-    assert belongingness == (2 / 3)
+    assert belongingness.exact_match == (2 / 3)
+    assert belongingness.human_review == (2 / 3)
 
 
 def test_calculate_belongingness_zero():
@@ -93,7 +94,8 @@ def test_calculate_belongingness_zero():
         ),
     )
     belongingness = calculate_belongingness(patient, existing_patients, pass_config)
-    assert belongingness == 0
+    assert belongingness.exact_match == 0
+    assert belongingness.human_review == 0
 
 
 def test_calculate_belongingness_one():
@@ -129,4 +131,41 @@ def test_calculate_belongingness_one():
         ),
     )
     belongingness = calculate_belongingness(patient, existing_patients, pass_config)
-    assert belongingness == 1
+    assert belongingness.human_review == 1
+
+
+def test_calculate_belongingness_human():
+    patient = Patient(
+        None,
+        None,
+        Name("legal", "Doe", "suffix", ["John", "middle", "second-middle"]),
+        None,
+        [],
+    )
+    existing_patients = [
+        Patient(
+            None,
+            None,
+            Name("legal", "Doe", "suffix", ["Jom", "middle", "second-middle"]),
+            None,
+            [],
+        ),
+    ]
+    pass_config = Pass(
+        {
+            Field.FIRST_NAME: Function.LOG_ODDS_FUZZY_MATCH,
+            Field.LAST_NAME: Function.EXACT_MATCH,
+        },
+        [],
+        Arguments(
+            log_odds={Field.FIRST_NAME: 1, Field.LAST_NAME: 1},
+            field_thresholds={Field.FIRST_NAME: 0.7, Field.LAST_NAME: 0.7},
+            cluster_ratio=1,
+            true_match_threshold=1.8,
+            human_review_threshold=1.0,
+            similarity_measure=SimilarityMeasure.JAROWINKLER,
+        ),
+    )
+    belongingness = calculate_belongingness(patient, existing_patients, pass_config)
+    assert belongingness.exact_match == 0
+    assert belongingness.human_review == 1

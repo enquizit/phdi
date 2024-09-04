@@ -20,6 +20,8 @@ def get_field_value(patient: Patient, field: Field) -> str | None:
             return patient.get_last_name()
         case Field.MIDDLE_NAME:
             return patient.get_middle_name()
+        case Field.SECOND_MIDDLE_NAME:
+            return patient.get_second_middle_name()
         case Field.BIRTHDATE:
             return patient.birthdate
         case Field.STREET_ADDRESS:

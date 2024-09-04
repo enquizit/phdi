@@ -56,7 +56,11 @@ def link_record(
                         cluster_ratio,
                     )
                 )
-            elif cluster_ratio.human_review >= linkage_pass.args.human_review_threshold:
+            elif (
+                linkage_pass.args.human_review_threshold is not None
+                and cluster_ratio.human_review
+                >= linkage_pass.args.human_review_threshold
+            ):
                 linkage_scores.append(
                     LinkageScore(
                         person_id,
@@ -94,8 +98,10 @@ def calculate_belongingness(
     for existing in existing_patients:
         pass_results.append(apply_pass(patient, existing, pass_config))
     match_types = [p.match_type for p in pass_results]
-    exact_ratio = match_types.count(MatchType.EXACT) / patient_count
-    human_review_ratio = match_types.count(MatchType.HUMAN_REVIEW) / patient_count
+    exact_count = match_types.count(MatchType.EXACT)
+    human_review_count = match_types.count(MatchType.HUMAN_REVIEW)
+    exact_ratio = exact_count / patient_count
+    human_review_ratio = (exact_count + human_review_count) / patient_count
     return ClusterRatio(exact_ratio, human_review_ratio, pass_results)
 
 
@@ -113,6 +119,7 @@ def apply_pass(a: Patient, b: Patient, pass_configuration: Pass) -> PassResult:
         # Get the actual values to be compared
         a_value = get_field_value(a, field)
         b_value = get_field_value(b, field)
+
         # Compare the values using the specified function
         field_score = calculate_score(
             a_value,
@@ -127,7 +134,10 @@ def apply_pass(a: Patient, b: Patient, pass_configuration: Pass) -> PassResult:
     # Check if score for pair meets threshold
     if total_score >= pass_configuration.args.true_match_threshold:
         return PassResult(b.patient_id, scores, MatchType.EXACT)
-    elif total_score >= pass_configuration.args.human_review_threshold:
+    elif (
+        pass_configuration.args.human_review_threshold is not None
+        and total_score >= pass_configuration.args.human_review_threshold
+    ):
         return PassResult(b.patient_id, scores, MatchType.HUMAN_REVIEW)
     else:
         return PassResult(b.patient_id, scores, MatchType.NONE)
