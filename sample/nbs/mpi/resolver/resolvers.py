@@ -6,6 +6,7 @@ from mpi.resolver.name_resolver import (
     fetch_first_name_block,
     fetch_last_name_block,
     fetch_middle_name_block,
+    fetch_suffix_block,
     fetch_second_middle_name_block,
 )
 from mpi.resolver.birthdate_resolver import fetch_birthdate_block
@@ -19,59 +20,65 @@ from mpi.resolver.identification_resolver import fetch_identification_block
 from mpi.resolver.patient_resolver import fetch_patients
 
 
-def fetch_first_name_block(
+def resolve_first_name(
     value: str | None, transform: Transform | None, connection: Connection
 ) -> list[str]:
     return fetch_first_name_block(value, transform, connection)
 
 
-def fetch_middle_name_block(
+def resolve_middle_name(
     value: str | None, transform: Transform | None, connection: Connection
 ) -> list[str]:
     return fetch_middle_name_block(value, transform, connection)
 
 
-def fetch_second_middle_name_block(
+def resolve_second_middle_name(
     value: str | None, transform: Transform | None, connection: Connection
 ) -> list[str]:
     return fetch_second_middle_name_block(value, transform, connection)
 
 
-def fetch_resolve_last_name_block(
+def resolve_suffix(
+    value: str | None, transform: Transform | None, connection: Connection
+) -> list[str]:
+    return fetch_suffix_block(value, transform, connection)
+
+
+def resolve_last_name(
     value: str | None, transform: Transform | None, connection: Connection
 ) -> list[str]:
     return fetch_last_name_block(value, transform, connection)
 
 
-def fetch_birthdate_block(date: str | None, connection: Connection) -> list[str]:
+def resolve_birthdate(date: str | None, connection: Connection) -> list[str]:
     return fetch_birthdate_block(date, connection)
 
 
-def fetch_address_block(
+def resolve_address(
     street: str | None, transform: Transform | None, connection: Connection
 ) -> list[str]:
     return fetch_address_block(street, transform, connection)
 
 
-def fetch_city_block(
+def resolve_city(
     city: str | None, transform: Transform | None, connection: Connection
 ) -> list[str]:
     return fetch_city_block(city, transform, connection)
 
 
-def fetch_state_block(
+def resolve_state(
     state: str | None, transform: Transform | None, connection: Connection
 ) -> list[str]:
     return fetch_state_block(state, transform, connection)
 
 
-def fetch_zip_block(
+def resolve_zip(
     zip: str | None, transform: Transform | None, connection: Connection
 ) -> list[str]:
     return fetch_zip_block(zip, transform, connection)
 
 
-def fetch_identification_block(
+def resolve_identification(
     value: str | None,
     identification_type: IdentificationType,
     transform: Transform | None,

@@ -7,6 +7,7 @@ class Field(Enum):
     LAST_NAME = "last_name"
     MIDDLE_NAME = "middle_name"
     SECOND_MIDDLE_NAME = "second_middle_name"
+    SUFFIX = "suffix"
     BIRTHDATE = "birthdate"
     STREET_ADDRESS = "street_address"
     CITY = "city"

@@ -55,6 +55,11 @@ class Patient:
             return self.name.family
         return None
 
+    def get_suffix(self) -> str | None:
+        if self.name is not None:
+            return self.name.suffix
+        return None
+
     def get_street_address(self) -> str | None:
         if self.address is not None and len(self.address.street) > 0:
             return self.address.street[0]

@@ -6,17 +6,18 @@ from linkage.models.client import BaseMPIConnectorClient
 from linkage.models.identification_types import IdentificationType
 from linkage.block import get_block_value
 from mpi.resolver.resolvers import (
-    fetch_first_name_block,
-    fetch_middle_name_block,
-    fetch_second_middle_name_block,
-    fetch_last_name_block,
-    fetch_birthdate_block,
-    fetch_address_block,
-    fetch_city_block,
-    fetch_state_block,
-    fetch_zip_block,
-    fetch_identification_block,
-    fetch_patients,
+    resolve_first_name,
+    resolve_middle_name,
+    resolve_second_middle_name,
+    resolve_last_name,
+    resolve_birthdate,
+    resolve_address,
+    resolve_city,
+    resolve_state,
+    resolve_zip,
+    resolve_identification,
+    resolve_patients,
+    resolve_suffix,
 )
 
 
@@ -43,60 +44,58 @@ class NbsMpiClient(BaseMPIConnectorClient):
             match block_criteria.field:
                 case Field.FIRST_NAME:
                     matching_patient_ids.update(
-                        fetch_first_name_block(
+                        resolve_first_name(
                             field_value, block_criteria.transform, self.conn
                         )
                     )
                 case Field.LAST_NAME:
                     matching_patient_ids.update(
-                        fetch_last_name_block(
+                        resolve_last_name(
                             field_value, block_criteria.transform, self.conn
                         )
                     )
                 case Field.MIDDLE_NAME:
                     matching_patient_ids.update(
-                        fetch_middle_name_block(
+                        resolve_middle_name(
                             field_value, block_criteria.transform, self.conn
                         )
                     )
                 case Field.SECOND_MIDDLE_NAME:
                     matching_patient_ids.update(
-                        fetch_second_middle_name_block(
+                        resolve_second_middle_name(
                             field_value, block_criteria.transform, self.conn
                         )
+                    )
+                case Field.SUFFIX:
+                    matching_patient_ids.update(
+                        resolve_suffix(field_value, block_criteria.transform, self.conn)
                     )
                 case Field.BIRTHDATE:
                     # transform not currently supported
                     matching_patient_ids.update(
-                        fetch_birthdate_block(field_value, self.conn)
+                        resolve_birthdate(field_value, self.conn)
                     )
                 case Field.STREET_ADDRESS:
                     matching_patient_ids.update(
-                        fetch_address_block(
+                        resolve_address(
                             field_value, block_criteria.transform, self.conn
                         )
                     )
                 case Field.CITY:
                     matching_patient_ids.update(
-                        fetch_city_block(
-                            field_value, block_criteria.transform, self.conn
-                        )
+                        resolve_city(field_value, block_criteria.transform, self.conn)
                     )
                 case Field.STATE:
                     matching_patient_ids.update(
-                        fetch_state_block(
-                            field_value, block_criteria.transform, self.conn
-                        )
+                        resolve_state(field_value, block_criteria.transform, self.conn)
                     )
                 case Field.ZIP:
                     matching_patient_ids.update(
-                        fetch_zip_block(
-                            field_value, block_criteria.transform, self.conn
-                        )
+                        resolve_zip(field_value, block_criteria.transform, self.conn)
                     )
                 case Field.IDENTIFICATION_MRN:
                     matching_patient_ids.update(
-                        fetch_identification_block(
+                        resolve_identification(
                             field_value,
                             IdentificationType.MEDICAL_RECORD_NUMBER,
                             block_criteria.transform,
@@ -105,7 +104,7 @@ class NbsMpiClient(BaseMPIConnectorClient):
                     )
                 case Field.IDENTIFICATION_SSN:
                     matching_patient_ids.update(
-                        fetch_identification_block(
+                        resolve_identification(
                             field_value,
                             IdentificationType.SOCIAL_SECURITY_NUMBER,
                             block_criteria.transform,
@@ -113,4 +112,4 @@ class NbsMpiClient(BaseMPIConnectorClient):
                         )
                     )
 
-        return fetch_patients(matching_patient_ids, self.conn)
+        return resolve_patients(matching_patient_ids, self.conn)

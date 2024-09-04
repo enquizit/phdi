@@ -248,6 +248,43 @@ def test_last_name_transform_last_four():
     assert value == "mily"
 
 
+# suffix
+def test_suffix_transform_none():
+    patient = Patient(
+        None,
+        None,
+        Name("", "family", "suffix", ["first", "middle", "second-middle"]),
+        None,
+        None,
+    )
+    value = get_block_value(patient, BlockCriteria(Field.SUFFIX, None))
+    assert value == "suffix"
+
+
+def test_suffix_transform_first_four():
+    patient = Patient(
+        None,
+        None,
+        Name("", "family", "suffix", ["first", "middle", "second-middle"]),
+        None,
+        None,
+    )
+    value = get_block_value(patient, BlockCriteria(Field.SUFFIX, Transform.FIRST_FOUR))
+    assert value == "suff"
+
+
+def test_suffix_transform_last_four():
+    patient = Patient(
+        None,
+        None,
+        Name("", "family", "suffix", ["first", "middle", "second-middle"]),
+        None,
+        None,
+    )
+    value = get_block_value(patient, BlockCriteria(Field.SUFFIX, Transform.LAST_FOUR))
+    assert value == "ffix"
+
+
 # birth date
 def test_birthdate_transform_none():
     patient = Patient(
