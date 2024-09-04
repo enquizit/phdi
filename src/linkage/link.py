@@ -3,9 +3,16 @@ from linkage.models.configuration import (
     Configuration,
     Pass,
     Function,
+    Field,
     SimilarityMeasure,
 )
-from linkage.models.result import MatchType, ClusterRatio, Result
+from linkage.models.result import (
+    MatchType,
+    ClusterRatio,
+    PassResult,
+    LinkageScore,
+    Response,
+)
 from linkage.models.client import BaseMPIConnectorClient
 from linkage.compare import (
     match_first_four,
@@ -20,7 +27,7 @@ from linkage.block import get_field_value
 
 def link_record(
     patient: Patient, configuration: Configuration, mpi_client: BaseMPIConnectorClient
-) -> Result:
+) -> Response:
     """
     For each Pass in the configuration do the following:
     1. Fetch blocks of patient data using the provided mpi_client
@@ -31,7 +38,7 @@ def link_record(
     or None if no matches are found
     """
     # Pare down from full BelongingnessRatio to {person: id, score: score, match_type: MatchType}
-    linkage_scores: list[Result] = []
+    linkage_scores: list[LinkageScore] = []
     for linkage_pass in configuration.passes:
         # Fetch matching patients based on configured blocks
         matching_patients = mpi_client.get_patient_data(patient, linkage_pass.blocks)
@@ -45,24 +52,32 @@ def link_record(
             )
             if cluster_ratio.exact_match >= linkage_pass.args.cluster_ratio:
                 linkage_scores.append(
-                    Result(person_id, cluster_ratio.exact_match, MatchType.EXACT)
+                    LinkageScore(
+                        person_id,
+                        cluster_ratio.exact_match,
+                        MatchType.EXACT,
+                        cluster_ratio,
+                    )
                 )
             elif cluster_ratio.human_review >= linkage_pass.args.human_review_threshold:
                 linkage_scores.append(
-                    Result(
-                        person_id, cluster_ratio.human_review, MatchType.HUMAN_REVIEW
+                    LinkageScore(
+                        person_id,
+                        cluster_ratio.human_review,
+                        MatchType.HUMAN_REVIEW,
+                        cluster_ratio,
                     )
                 )
 
     # After all passes, find the strongest match if one exists
     if len(linkage_scores) == 0:
-        return Result(None, 0.0, MatchType.NONE)
+        return Response(None, MatchType.NONE, None)
 
-    best_match = max(linkage_scores, key=lambda x: x.cluster_ratio)
-    if best_match is not None and best_match.cluster_ratio > 0:
-        return best_match
+    best_match: LinkageScore | None = max(linkage_scores, key=lambda x: x.score)
+    if best_match is not None and best_match.score > 0:
+        return Response(best_match.patient, best_match.match_type, best_match)
     else:
-        return Result(None, 0.0, MatchType.NONE)
+        return Response(None, 0.0, MatchType.NONE)
 
 
 def calculate_belongingness(
@@ -79,20 +94,21 @@ def calculate_belongingness(
     if patient_count == 0:
         return ClusterRatio(0, MatchType.NONE)
 
-    matches: list[MatchType] = []
+    pass_results: list[PassResult] = []
     for existing in existing_patients:
-        matches.append(apply_pass(patient, existing, pass_config))
+        pass_results.append(apply_pass(patient, existing, pass_config))
+    match_types = [p.match_type for p in pass_results]
+    exact_ratio = match_types.count(MatchType.EXACT) / patient_count
+    human_review_ratio = match_types.count(MatchType.HUMAN_REVIEW) / patient_count
+    return ClusterRatio(exact_ratio, human_review_ratio, pass_results)
 
-    exact_ratio = matches.count(MatchType.EXACT) / patient_count
-    human_review_ratio = matches.count(MatchType.HUMAN_REVIEW) / patient_count
-    return ClusterRatio(exact_ratio, human_review_ratio)
 
-
-def apply_pass(a: Patient, b: Patient, pass_configuration: Pass) -> MatchType:
+def apply_pass(a: Patient, b: Patient, pass_configuration: Pass) -> PassResult:
     """
     Apply the specified Pass configuration to the provided Patient records.
     Return true if the total score calculated exceeds the configured true match threshold
     """
+    scores: dict[Field, float] = {}
     total_score = 0.0
     # Run each specified function on the specified field, capturing the score
     for field in pass_configuration.functions:  # dict[Field, Function]
@@ -100,7 +116,7 @@ def apply_pass(a: Patient, b: Patient, pass_configuration: Pass) -> MatchType:
         a_value = get_field_value(a, field)
         b_value = get_field_value(b, field)
         # Compare the values using the specified function
-        total_score += calculate_score(
+        field_score = calculate_score(
             a_value,
             b_value,
             pass_configuration.functions[field],
@@ -108,13 +124,15 @@ def apply_pass(a: Patient, b: Patient, pass_configuration: Pass) -> MatchType:
             pass_configuration.args.log_odds[field],
             pass_configuration.args.similarity_measure,
         )
+        total_score += field_score
+        scores[field] = field_score
     # Check if score for pair meets threshold
     if total_score >= pass_configuration.args.true_match_threshold:
-        return MatchType.EXACT
+        return PassResult(b.patient_id, scores, MatchType.EXACT)
     elif total_score >= pass_configuration.args.human_review_threshold:
-        return MatchType.HUMAN_REVIEW
+        return PassResult(b.patient_id, scores, MatchType.HUMAN_REVIEW)
     else:
-        return MatchType.NONE
+        return PassResult(b.patient_id, scores, MatchType.NONE)
 
 
 def calculate_score(
