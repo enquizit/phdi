@@ -5,6 +5,7 @@ from linkage.models.configuration import Configuration
 from mpi.nbs_mpi import NbsMpiClient
 from linkage.parse import to_patient
 from linkage.models.result import MatchType, Response
+from dataclasses import dataclass
 
 app = FastAPI()
 
@@ -75,12 +76,25 @@ app = FastAPI()
 mpi_client = NbsMpiClient()
 
 
+@dataclass
+class SimpleResponse:
+    patient: int | None
+    match_type: MatchType
+
+
 @app.post("/match")
-async def match(patient_resource: dict, configuration: Configuration) -> Response:
+async def match(
+    patient_resource: dict, configuration: Configuration, log: bool = True
+) -> Response | SimpleResponse:
     patient = to_patient(patient_resource)
     if patient is None:
         return Response(None, 0.0, MatchType.NONE)
-    return link_record(patient, configuration, mpi_client)
+    response = link_record(patient, configuration, mpi_client)
+    print("log", log)
+    if log is True:
+        return response
+    else:
+        return SimpleResponse(response.patient, response.match_type)
 
 
 if __name__ == "__main__":

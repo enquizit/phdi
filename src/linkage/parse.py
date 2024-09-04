@@ -18,7 +18,7 @@ def to_patient(patient_resource: dict) -> Patient:
     return Patient(
         name=parse_name(patient_resource),
         birthdate=parse_birthdate(patient_resource),
-        gender=parse_gender(patient_resource),
+        sex=parse_gender(patient_resource),
         address=parse_address(patient_resource),
         identifications=parse_identifications(patient_resource),
     )

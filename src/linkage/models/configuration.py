@@ -9,6 +9,7 @@ class Field(Enum):
     SECOND_MIDDLE_NAME = "second_middle_name"
     SUFFIX = "suffix"
     BIRTHDATE = "birthdate"
+    CURRENT_SEX = "current_sex"
     STREET_ADDRESS = "street_address"
     CITY = "city"
     STATE = "state"

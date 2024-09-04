@@ -28,7 +28,7 @@ class Address:
 @dataclass
 class Patient:
     birthdate: str | None
-    gender: str | None
+    sex: str | None
     name: Name
     address: Address
     identifications: list[Identification] = field(default_factory=list)
@@ -58,6 +58,11 @@ class Patient:
     def get_suffix(self) -> str | None:
         if self.name is not None:
             return self.name.suffix
+        return None
+
+    def get_sex(self) -> str | None:
+        if self.sex is not None and len(self.sex) > 0:
+            return self.sex[0].lower()
         return None
 
     def get_street_address(self) -> str | None:

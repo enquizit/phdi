@@ -18,6 +18,7 @@ from mpi.resolver.resolvers import (
     resolve_identification,
     resolve_patients,
     resolve_suffix,
+    resolve_current_sex,
 )
 
 
@@ -69,6 +70,11 @@ class NbsMpiClient(BaseMPIConnectorClient):
                 case Field.SUFFIX:
                     matching_patient_ids.update(
                         resolve_suffix(field_value, block_criteria.transform, self.conn)
+                    )
+                case Field.CURRENT_SEX:
+                    # transform not currently supported
+                    matching_patient_ids.update(
+                        resolve_current_sex(field_value, self.conn)
                     )
                 case Field.BIRTHDATE:
                     # transform not currently supported

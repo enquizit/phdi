@@ -1,14 +1,15 @@
 from linkage.parse import to_patient
 from copy import deepcopy
 
-test_data = {"resourceType": "Patient",
+test_data = {
+    "resourceType": "Patient",
     "gender": "male",
     "name": [
         {
             "family": "Washington",
             "given": ["Rob", "Robert"],
             "use": "legal",
-            "suffix": "JR"
+            "suffix": "JR",
         }
     ],
     "address": [
@@ -17,7 +18,7 @@ test_data = {"resourceType": "Patient",
             "city": "Sarahbury",
             "state": "MA",
             "postalCode": "64832",
-            "country": "USA"
+            "country": "USA",
         }
     ],
     "identifier": [
@@ -29,15 +30,16 @@ test_data = {"resourceType": "Patient",
                     {
                         "system": "http://hl7.org/fhir/v2/0203",
                         "code": "MR",
-                        "display": "Medical Record Number"
+                        "display": "Medical Record Number",
                     }
                 ],
-                "text": "MRN"
+                "text": "MRN",
             },
-            "assigner": "Hospital"
+            "assigner": "Hospital",
         }
     ],
-    "birthDate": "2003-10-08"}
+    "birthDate": "2003-10-08",
+}
 
 
 def test_all():
@@ -55,7 +57,7 @@ def test_all():
     assert (patient.birthdate) == "2003-10-08"
 
     # Gender
-    assert (patient.gender) == "male"
+    assert (patient.sex) == "male"
 
     # Address
     assert (len(patient.address.street)) == 2
@@ -138,7 +140,7 @@ def test_empty_gender():
     patient_bundle = deepcopy(test_data)
     patient_bundle["gender"] = None
     patient = to_patient(patient_bundle)
-    assert (patient.gender) is None
+    assert (patient.sex) is None
 
 
 # Address
