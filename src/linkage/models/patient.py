@@ -1,3 +1,4 @@
+from enum import Enum
 from linkage.models.identification_types import IdentificationType
 from dataclasses import dataclass, field
 
@@ -25,12 +26,34 @@ class Address:
     street: list[str] = field(default_factory=list)
 
 
+class System(Enum):
+    PHONE = "phone"
+    EMAIL = "email"
+
+
+@dataclass
+class Telecom:
+    value: str
+    system: System | None
+
+    def __init__(self, value: str, system: str | None):
+        self.value = value
+        match system:
+            case "phone":
+                self.system = System.PHONE
+            case "email":
+                self.system = System.EMAIL
+            case _:
+                self.system = None
+
+
 @dataclass
 class Patient:
     birthdate: str | None
     sex: str | None
     name: Name
     address: Address
+    telecom: list[Telecom] = field(default_factory=list)
     identifications: list[Identification] = field(default_factory=list)
     patient_id: str | None = None
     person_id: str | None = None

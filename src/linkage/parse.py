@@ -1,4 +1,10 @@
-from linkage.models.patient import Patient, Name, Address, Identification
+from linkage.models.patient import (
+    Patient,
+    Name,
+    Address,
+    Identification,
+    Telecom,
+)
 import fhirpathpy
 
 
@@ -8,6 +14,7 @@ FHIR_PATHS = {
     "gender": fhirpathpy.compile("Patient.gender"),
     "address": fhirpathpy.compile("Patient.address[0]"),
     "identifications": fhirpathpy.compile("Patient.identifier"),
+    "telecom": fhirpathpy.compile("Patient.telecom"),
 }
 
 
@@ -20,6 +27,7 @@ def to_patient(patient_resource: dict) -> Patient:
         birthdate=parse_birthdate(patient_resource),
         sex=parse_gender(patient_resource),
         address=parse_address(patient_resource),
+        telecom=parse_telecom(patient_resource),
         identifications=parse_identifications(patient_resource),
     )
 
@@ -78,3 +86,14 @@ def parse_identification_type(entry: dict) -> str | None:
         return None
     coding = type_dict.get("coding")
     return coding[0].get("code") if coding is not None and len(coding) > 0 else None
+
+
+def parse_telecom(patient_resource: str) -> list[Telecom]:
+    telecoms: list[dict[str, str | list[str]]] = FHIR_PATHS["telecom"](patient_resource)
+    return [
+        Telecom(
+            entry.get("value"),
+            entry.get("system"),
+        )
+        for entry in telecoms
+    ]

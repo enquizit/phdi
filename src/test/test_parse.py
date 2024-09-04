@@ -1,4 +1,5 @@
 from linkage.parse import to_patient
+from linkage.models.patient import System
 from copy import deepcopy
 
 test_data = {
@@ -20,6 +21,9 @@ test_data = {
             "postalCode": "64832",
             "country": "USA",
         }
+    ],
+    "telecom": [
+        {"system": "phone", "value": "(123) 456-7890", "use": "work", "rank": 1}
     ],
     "identifier": [
         {
@@ -65,6 +69,11 @@ def test_all():
     assert (patient.address.city) == "Sarahbury"
     assert (patient.address.state) == "MA"
     assert (patient.address.zip) == "64832"
+
+    # Telecom
+    assert len(patient.telecom) == 1
+    assert patient.telecom[0].value == "(123) 456-7890"
+    assert patient.telecom[0].system == System.PHONE
 
     # Identification
     assert (len(patient.identifications)) == 1
@@ -238,3 +247,25 @@ def test_empty_identification_type_assigning_authority():
     assert (patient.identifications[0].value) == "551-79-0423"
     assert (patient.identifications[0].assigning_authority) is None
     assert (patient.identifications[0].type) == "MR"
+
+
+# Telecom
+def test_empty_telecom():
+    patient_bundle = deepcopy(test_data)
+    patient_bundle["telecom"] = None
+    patient = to_patient(patient_bundle)
+    assert (len(patient.telecom)) == 0
+
+
+def test_empty_telecom_value():
+    patient_bundle = deepcopy(test_data)
+    patient_bundle["telecom"][0]["value"] = None
+    patient = to_patient(patient_bundle)
+    assert (patient.telecom[0].value) is None
+
+
+def test_empty_telecom_system():
+    patient_bundle = deepcopy(test_data)
+    patient_bundle["telecom"][0]["system"] = None
+    patient = to_patient(patient_bundle)
+    assert (patient.telecom[0].system) is None

@@ -11,68 +11,77 @@ app = FastAPI()
 
 ## Sample request
 # {
-#   "patient_resource": {"resourceType": "Patient",
-#     "gender": "male",
-#     "name": [
-#         {
-#             "family": "Washington",
-#             "given": ["First", "Robert"],
-#             "use": "legal",
-#             "suffix": "JR"
-#         }
-#     ],
-#     "address": [
-#         {
-#             "line": ["3461 Adams Neck", "Northeast"],
-#             "city": "Sarahbury",
-#             "state": "MA",
-#             "postalCode": "64832",
-#             "country": "USA"
-#         }
-#     ],
-#     "identifier": [
-#         {
-#             "system": "http://hospital.com/mrn",
-#             "value": "551-79-0423",
-#             "type": {
-#                 "coding": [
-#                     {
-#                         "system": "http://hl7.org/fhir/v2/0203",
-#                         "code": "MR",
-#                         "display": "Medical Record Number"
-#                     }
-#                 ],
-#                 "text": "MRN"
-#             },
-#             "assigner": "Hospital"
-#         }
-#     ],
-#     "birthDate": "2003-10-08"},
-#   "configuration": {
-#     "passes": [
-#       {
-#         "functions": {
-#           "first_name": "log_odds_fuzzy_match"
-#         },
-#         "blocks": [
-#           {"field": "first_name", "transform": null}
+#     "patient_resource": {
+#         "resourceType": "Patient",
+#         "gender": "male",
+#         "name": [
+#             {
+#                 "family": "Washington",
+#                 "given": ["First", "Robert"],
+#                 "use": "legal",
+#                 "suffix": "JR"
+#             }
 #         ],
-#         "args": {
-#           "log_odds": {
-#             "first_name": 2
-#           },
-#           "field_thresholds": {
-#             "first_name": 1
-#           },
-#           "cluster_ratio": 0.5,
-#           "true_match_threshold": 1.4,
-#           "human_review_threshold": 0,
-#           "similarity_measure": "jarowinkler"
-#         }
-#       }
-#     ]
-#   }
+#         "address": [
+#             {
+#                 "line": ["3461 Adams Neck", "Northeast"],
+#                 "city": "Sarahbury",
+#                 "state": "MA",
+#                 "postalCode": "64832",
+#                 "country": "USA"
+#             }
+#         ],
+#         "telecom": [
+#             {
+#                 "system": "phone",
+#                 "value": "(123) 456 7890",
+#                 "use": "work",
+#                 "rank": 1
+#             }
+#         ],
+#         "identifier": [
+#             {
+#                 "system": "http://hospital.com/mrn",
+#                 "value": "551-79-0423",
+#                 "type": {
+#                     "coding": [
+#                         {
+#                             "system": "http://hl7.org/fhir/v2/0203",
+#                             "code": "MR",
+#                             "display": "Medical Record Number"
+#                         }
+#                     ],
+#                     "text": "MRN"
+#                 },
+#                 "assigner": "Hospital"
+#             }
+#         ],
+#         "birthDate": "2003-10-08"
+#     },
+#     "configuration": {
+#         "passes": [
+#             {
+#                 "functions": {
+#                     "first_name": "log_odds_fuzzy_match"
+#                 },
+#                 "blocks": [{ "field": "first_name", "transform": null }],
+#                 "args": {
+#                     "log_odds": {
+#                         "first_name": 1.765
+#                     },
+#                     "field_thresholds": {
+#                         "first_name": 1
+#                     },
+#                     "cluster_ratio": 0.5,
+#                     "true_match_threshold": 1.4,
+#                     "human_review_threshold": 1,
+#                     "similarity_measure": "jarowinkler"
+#                 }
+#             }
+#         ]
+#     }
 # }
+
 mpi_client = NbsMpiClient()
 
 
