@@ -35,7 +35,7 @@ class NbsMpiClient(BaseMPIConnectorClient):
     def __init__(self):
         # View installed drivers: odbcinst -j
         DRIVER = "ODBC Driver 18 for SQL Server"
-        SERVER = "localhost"
+        SERVER = "nbs-mssql"
         PORT = "1433"
         DATABASE = "NBS_ODSE"
         USERNAME = "sa"
