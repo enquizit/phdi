@@ -40,10 +40,10 @@ def get_field_value(patient: Patient, field: Field) -> str | None:
             return patient.get_zip()
         case Field.IDENTIFICATION_MRN:
             id_type = IdentificationType.MEDICAL_RECORD_NUMBER
-            return patient.get_id(id_type)
+            return patient.get_id(id_type).value
         case Field.IDENTIFICATION_SSN:
             id_type = IdentificationType.SOCIAL_SECURITY_NUMBER
-            return patient.get_id(id_type)
+            return patient.get_id(id_type).value
 
 
 def transform_value(value: str | None, transform: Transform | None) -> str | None:

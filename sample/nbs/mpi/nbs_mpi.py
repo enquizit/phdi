@@ -1,9 +1,8 @@
 import pyodbc
 from pyodbc import Connection
 from linkage.models.patient import Patient
-from linkage.models.configuration import BlockCriteria, Field
+from linkage.models.configuration import BlockCriteria
 from linkage.models.client import BaseMPIConnectorClient
-from linkage.models.identification_types import IdentificationType
 from linkage.block import get_block_value
 from nbs.mpi.resolver.criteria_mapper import map_to_query
 from nbs.mpi.resolver.patient_resolver import fetch_patients
@@ -44,7 +43,7 @@ class NbsMpiClient(BaseMPIConnectorClient):
         connection_string = f"DRIVER={DRIVER};SERVER={SERVER};PORT={PORT};DATABASE={DATABASE};UID={USERNAME};PWD={PASSWORD};TrustServerCertificate=yes;"
         self.conn = pyodbc.connect(connection_string)
 
-    def fetch_patient_block(
+    def get_patient_data(
         self, patient: Patient, criteria: list[BlockCriteria]
     ) -> list[Patient]:
         query = str(base_query)

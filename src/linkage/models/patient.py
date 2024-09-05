@@ -116,6 +116,6 @@ class Patient:
             return self.address.zip
         return None
 
-    def get_id(self, id_type: str) -> Identification | None:
-        id_list = [x for x in self.identifications if x.type == id_type]
+    def get_id(self, id_type: IdentificationType) -> Identification | None:
+        id_list = [x for x in self.identifications if x.type == id_type.value]
         return id_list[0] if len(id_list) > 0 else None

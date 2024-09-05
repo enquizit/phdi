@@ -13,21 +13,21 @@ app = FastAPI()
 # {
 #     "patient_resource": {
 #         "resourceType": "Patient",
-#         "gender": "male",
+#         "gender": "unknown",
 #         "name": [
 #             {
-#                 "family": "Washington",
-#                 "given": ["First", "Robert"],
+#                 "family": "Mouse",
+#                 "given": ["Minnie"],
 #                 "use": "legal",
-#                 "suffix": "JR"
+#                 "suffix": null
 #             }
 #         ],
 #         "address": [
 #             {
-#                 "line": ["3461 Adams Neck", "Northeast"],
-#                 "city": "Sarahbury",
-#                 "state": "MA",
-#                 "postalCode": "64832",
+#                 "line": ["123 Franklin Pike"],
+#                 "city": "Nashville",
+#                 "state": "TN",
+#                 "postalCode": "37243",
 #                 "country": "USA"
 #             }
 #         ],
@@ -42,35 +42,43 @@ app = FastAPI()
 #         "identifier": [
 #             {
 #                 "system": "http://hospital.com/mrn",
-#                 "value": "551-79-0423",
+#                 "value": "485-45-4894",
 #                 "type": {
 #                     "coding": [
 #                         {
 #                             "system": "http://hl7.org/fhir/v2/0203",
-#                             "code": "MR",
-#                             "display": "Medical Record Number"
+#                             "code": "SS",
+#                             "display": "Social Security "
 #                         }
 #                     ],
-#                     "text": "MRN"
+#                     "text": "SSN"
 #                 },
-#                 "assigner": "Hospital"
+#                 "assigner": null
 #             }
 #         ],
-#         "birthDate": "2003-10-08"
+#         "birthDate": "1990-01-01"
 #     },
 #     "configuration": {
 #         "passes": [
 #             {
 #                 "functions": {
-#                     "first_name": "log_odds_fuzzy_match"
+#                     "first_name": "log_odds_fuzzy_match",
+#                     "last_name": "log_odds_fuzzy_match"
 #                 },
-#                 "blocks": [{ "field": "first_name", "transform": null }],
+#                 "blocks": [
+#                     {"field": "birthdate", "transform": null },
+#                     {"field": "ssn", "transform": "last_four"},
+#                     {"field": "current_sex", "transform": null}
+
+#                 ],
 #                 "args": {
 #                     "log_odds": {
-#                         "first_name": 1.765
+#                         "first_name": 1.765,
+#                         "last_name": 1.2
 #                     },
 #                     "field_thresholds": {
-#                         "first_name": 1
+#                         "first_name": 1,
+#                         "last_name" : 1
 #                     },
 #                     "cluster_ratio": 0.5,
 #                     "true_match_threshold": 1.4,
