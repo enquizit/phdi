@@ -1,5 +1,5 @@
 from linkage.models.patient import System
-from nbs.mpi.resolver.data_converter import (
+from nbs.mpi.data_converter import (
     to_name,
     to_address,
     to_identifications,

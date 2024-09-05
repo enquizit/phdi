@@ -4,8 +4,8 @@ from linkage.models.patient import Patient
 from linkage.models.configuration import BlockCriteria
 from linkage.models.client import BaseMPIConnectorClient
 from linkage.block import get_block_value
-from nbs.mpi.resolver.criteria_mapper import map_to_query
-from nbs.mpi.resolver.patient_resolver import fetch_patients
+from nbs.mpi.criteria_mapper import map_to_query
+from nbs.mpi.patient_resolver import fetch_patients
 
 base_query = """
     SELECT DISTINCT
