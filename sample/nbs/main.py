@@ -93,7 +93,7 @@ class SimpleResponse:
 
 @app.post("/match")
 async def match(
-    patient_resource: dict, configuration: Configuration, log: bool = True
+    patient_resource: dict, configuration: Configuration, log: bool = False
 ) -> Response | SimpleResponse:
     patient = to_patient(patient_resource)
     if patient is None:
