@@ -69,16 +69,31 @@ def link_record(
                         cluster_ratio,
                     )
                 )
+            else:
+                linkage_scores.append(
+                    LinkageScore(
+                        person_id,
+                        cluster_ratio.human_review,
+                        MatchType.NONE,
+                        cluster_ratio,
+                    )
+                )
+
+    matching_scores = [
+        x
+        for x in linkage_scores
+        if x.match_type == MatchType.EXACT or x.match_type == MatchType.HUMAN_REVIEW
+    ]
 
     # After all passes, find the strongest match if one exists
-    if len(linkage_scores) == 0:
-        return Response(None, MatchType.NONE, None)
+    if len(matching_scores) == 0:
+        return Response(None, MatchType.NONE, linkage_scores)
 
-    best_match: LinkageScore | None = max(linkage_scores, key=lambda x: x.score)
+    best_match: LinkageScore | None = max(matching_scores, key=lambda x: x.score)
     if best_match is not None and best_match.score > 0:
-        return Response(best_match.patient, best_match.match_type, best_match)
+        return Response(best_match.patient, best_match.match_type, linkage_scores)
     else:
-        return Response(None, MatchType.NONE, None)
+        return Response(None, MatchType.NONE, linkage_scores)
 
 
 def calculate_belongingness(

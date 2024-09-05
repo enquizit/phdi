@@ -35,4 +35,4 @@ class LinkageScore:
 class Response:
     patient: int | None
     match_type: MatchType
-    linkage_score: LinkageScore | None
+    linkage_scores: list[LinkageScore] | None

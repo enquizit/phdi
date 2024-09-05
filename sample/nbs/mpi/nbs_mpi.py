@@ -5,22 +5,29 @@ from linkage.models.configuration import BlockCriteria, Field
 from linkage.models.client import BaseMPIConnectorClient
 from linkage.models.identification_types import IdentificationType
 from linkage.block import get_block_value
-from nbs.mpi.resolver.resolvers import (
-    resolve_first_name,
-    resolve_middle_name,
-    resolve_second_middle_name,
-    resolve_last_name,
-    resolve_birthdate,
-    resolve_phone,
-    resolve_address,
-    resolve_city,
-    resolve_state,
-    resolve_zip,
-    resolve_identification,
-    resolve_patients,
-    resolve_suffix,
-    resolve_current_sex,
-)
+from nbs.mpi.resolver.criteria_mapper import map_to_query
+from nbs.mpi.resolver.patient_resolver import fetch_patients
+
+base_query = """
+    SELECT DISTINCT
+        p.person_parent_uid
+    FROM
+        person p
+        LEFT JOIN person_name pn ON p.person_uid = pn.person_uid
+            AND pn.record_status_cd = 'ACTIVE'
+            AND pn.nm_use_cd = 'L'
+        LEFT JOIN Entity_locator_participation elp ON elp.entity_uid = p.person_uid
+            AND elp.record_status_cd = 'ACTIVE'
+        LEFT JOIN postal_locator pl ON elp.locator_uid = pl.postal_locator_uid
+            AND elp.class_cd = 'PST'
+        LEFT JOIN tele_locator tl ON elp.locator_uid = tl.tele_locator_uid
+            AND elp.class_cd = 'TELE'
+        LEFT JOIN entity_id id ON p.person_uid = id.entity_uid
+            AND id.record_status_cd = 'ACTIVE'
+    WHERE
+        p.cd = 'PAT'
+        AND p.record_status_cd = 'ACTIVE'
+"""
 
 
 class NbsMpiClient(BaseMPIConnectorClient):
@@ -29,7 +36,7 @@ class NbsMpiClient(BaseMPIConnectorClient):
     def __init__(self):
         # View installed drivers: odbcinst -j
         DRIVER = "ODBC Driver 18 for SQL Server"
-        SERVER = "nbs-mssql"
+        SERVER = "localhost"
         PORT = "1433"
         DATABASE = "NBS_ODSE"
         USERNAME = "sa"
@@ -37,91 +44,21 @@ class NbsMpiClient(BaseMPIConnectorClient):
         connection_string = f"DRIVER={DRIVER};SERVER={SERVER};PORT={PORT};DATABASE={DATABASE};UID={USERNAME};PWD={PASSWORD};TrustServerCertificate=yes;"
         self.conn = pyodbc.connect(connection_string)
 
-    def get_patient_data(
+    def fetch_patient_block(
         self, patient: Patient, criteria: list[BlockCriteria]
     ) -> list[Patient]:
-        matching_patient_ids = set[int]()
+        query = str(base_query)
+        parameters: list[str | None] = []
         for block_criteria in criteria:
             field_value = get_block_value(patient, block_criteria)
 
-            match block_criteria.field:
-                case Field.FIRST_NAME:
-                    matching_patient_ids.update(
-                        resolve_first_name(
-                            field_value, block_criteria.transform, self.conn
-                        )
-                    )
-                case Field.LAST_NAME:
-                    matching_patient_ids.update(
-                        resolve_last_name(
-                            field_value, block_criteria.transform, self.conn
-                        )
-                    )
-                case Field.MIDDLE_NAME:
-                    matching_patient_ids.update(
-                        resolve_middle_name(
-                            field_value, block_criteria.transform, self.conn
-                        )
-                    )
-                case Field.SECOND_MIDDLE_NAME:
-                    matching_patient_ids.update(
-                        resolve_second_middle_name(
-                            field_value, block_criteria.transform, self.conn
-                        )
-                    )
-                case Field.SUFFIX:
-                    matching_patient_ids.update(
-                        resolve_suffix(field_value, block_criteria.transform, self.conn)
-                    )
-                case Field.CURRENT_SEX:
-                    # transform not currently supported
-                    matching_patient_ids.update(
-                        resolve_current_sex(field_value, self.conn)
-                    )
-                case Field.BIRTHDATE:
-                    # transform not currently supported
-                    matching_patient_ids.update(
-                        resolve_birthdate(field_value, self.conn)
-                    )
-                case Field.TELEPHONE:
-                    matching_patient_ids.update(
-                        resolve_phone(field_value, block_criteria.transform, self.conn)
-                    )
-                case Field.STREET_ADDRESS:
-                    matching_patient_ids.update(
-                        resolve_address(
-                            field_value, block_criteria.transform, self.conn
-                        )
-                    )
-                case Field.CITY:
-                    matching_patient_ids.update(
-                        resolve_city(field_value, block_criteria.transform, self.conn)
-                    )
-                case Field.STATE:
-                    matching_patient_ids.update(
-                        resolve_state(field_value, block_criteria.transform, self.conn)
-                    )
-                case Field.ZIP:
-                    matching_patient_ids.update(
-                        resolve_zip(field_value, block_criteria.transform, self.conn)
-                    )
-                case Field.IDENTIFICATION_MRN:
-                    matching_patient_ids.update(
-                        resolve_identification(
-                            field_value,
-                            IdentificationType.MEDICAL_RECORD_NUMBER,
-                            block_criteria.transform,
-                            self.conn,
-                        )
-                    )
-                case Field.IDENTIFICATION_SSN:
-                    matching_patient_ids.update(
-                        resolve_identification(
-                            field_value,
-                            IdentificationType.SOCIAL_SECURITY_NUMBER,
-                            block_criteria.transform,
-                            self.conn,
-                        )
-                    )
+            # Add the where clause to the query
+            search_query = map_to_query(field_value, block_criteria)
+            query += search_query.query
+            parameters += search_query.params
 
-        return resolve_patients(matching_patient_ids, self.conn)
+        with self.conn.cursor() as cursor:
+            cursor.execute(query, parameters)
+            records = cursor.fetchall()
+            patient_ids: set[int] = set([r.person_parent_uid for r in records])
+            return fetch_patients(patient_ids, self.conn)
